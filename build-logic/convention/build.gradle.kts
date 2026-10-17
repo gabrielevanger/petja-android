@@ -1,0 +1,53 @@
+plugins {
+    `kotlin-dsl`
+    alias(libs.plugins.ktlint)
+}
+
+ktlint {
+    version.set(libs.versions.ktlint)
+}
+
+group = "io.github.gabrielevanger.xodopet.buildlogic"
+
+kotlin {
+    jvmToolchain(
+        libs.versions.jvmToolchain
+            .get()
+            .toInt(),
+    )
+}
+
+dependencies {
+    compileOnly(libs.android.gradlePlugin)
+    compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.ktlint.gradlePlugin)
+}
+
+gradlePlugin {
+    plugins {
+        register("jvmLibrary") {
+            id = "xodo.jvm.library"
+            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.JvmLibraryConventionPlugin"
+        }
+        register("androidLibrary") {
+            id = "xodo.android.library"
+            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidLibraryConventionPlugin"
+        }
+        register("androidApplication") {
+            id = "xodo.android.application"
+            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidApplicationConventionPlugin"
+        }
+        register("androidCompose") {
+            id = "xodo.android.compose"
+            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidComposeConventionPlugin"
+        }
+        register("androidHilt") {
+            id = "xodo.android.hilt"
+            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidHiltConventionPlugin"
+        }
+        register("androidFeature") {
+            id = "xodo.android.feature"
+            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidFeatureConventionPlugin"
+        }
+    }
+}
