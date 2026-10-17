@@ -1,0 +1,12 @@
+{
+  "name": "xodo-pet-db-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node db.test.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-postgis": "0.2.8"
+  }
+}
