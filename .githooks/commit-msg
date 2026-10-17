@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Valida a mensagem de commit antes de o Git registrar o commit.
+# Ativação (uma vez por clone): git config core.hooksPath .githooks
+
+set -euo pipefail
+export LC_ALL=C.UTF-8
+
+readonly MAX_HEADER_LENGTH=72
+readonly TYPES='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+
+msg_file="$1"
+header="$(head -n 1 "$msg_file")"
+
+case "$header" in
+  "Merge "* | "Revert "* | "fixup! "* | "squash! "*) exit 0 ;;
+esac
+
+fail() {
+  printf 'commit-msg: %s\n' "$1" >&2
+  printf '  título recebido: %s\n' "$header" >&2
+  exit 1
+}
+
+pattern="^(${TYPES})(\([a-z0-9._-]+\))?!?: [^ ].*$"
+if [[ ! "$header" =~ $pattern ]]; then
+  fail "o título deve seguir <tipo>(<escopo opcional>): <descrição>, com tipo entre: ${TYPES//|/, }"
+fi
+
+if (( ${#header} > MAX_HEADER_LENGTH )); then
+  fail "o título tem ${#header} caracteres; o máximo é ${MAX_HEADER_LENGTH}"
+fi
+
+em_dash="$(printf '\xe2\x80\x94')"
+en_dash="$(printf '\xe2\x80\x93')"
+if grep -v '^#' "$msg_file" | grep -q -F -e "$em_dash" -e "$en_dash"; then
+  fail "a mensagem contém travessão ou meia-risca; use vírgula, dois-pontos ou parênteses"
+fi
