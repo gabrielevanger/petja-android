@@ -27,3 +27,4 @@ rootProject.name = "xodo-pet"
 include(":core:domain")
 include(":core:data")
 include(":core:designsystem")
+include(":core:ui")
