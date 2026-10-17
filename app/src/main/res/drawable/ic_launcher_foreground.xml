@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ícone provisório: uma pata, até a identidade visual ficar pronta. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFF8F2"
+        android:pathData="M54,56c-9,0 -16,8 -16,15c0,5 4,8 9,8c3,0 5,-2 7,-2s4,2 7,2c5,0 9,-3 9,-8c0,-7 -7,-15 -16,-15z" />
+    <path
+        android:fillColor="#FFFFF8F2"
+        android:pathData="M40,52m-6,0a6,7 0,1 1,12 0a6,7 0,1 1,-12 0" />
+    <path
+        android:fillColor="#FFFFF8F2"
+        android:pathData="M48,40m-6,0a6,7 0,1 1,12 0a6,7 0,1 1,-12 0" />
+    <path
+        android:fillColor="#FFFFF8F2"
+        android:pathData="M60,40m-6,0a6,7 0,1 1,12 0a6,7 0,1 1,-12 0" />
+    <path
+        android:fillColor="#FFFFF8F2"
+        android:pathData="M68,52m-6,0a6,7 0,1 1,12 0a6,7 0,1 1,-12 0" />
+</vector>

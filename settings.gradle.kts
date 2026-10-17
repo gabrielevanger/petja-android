@@ -24,6 +24,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "xodo-pet"
 
+include(":app")
 include(":core:domain")
 include(":core:data")
 include(":core:designsystem")
