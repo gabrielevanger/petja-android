@@ -24,6 +24,10 @@ sealed interface CartUiState {
         val missingForMinOrder: String?,
         val signedIn: Boolean = false,
     ) : CartUiState {
+        /** Unidades no carrinho, somando as quantidades de cada linha. */
+        val itemCount: Int
+            get() = lines.sumOf { it.quantity }
+
         /** O pedido só segue com taxa conhecida, loja aberta e pedido mínimo atingido (RF-44). */
         val canCheckout: Boolean
             get() = total != null && missingForMinOrder == null && (delivery as? DeliveryUi.Fee)?.storeIsOpen == true

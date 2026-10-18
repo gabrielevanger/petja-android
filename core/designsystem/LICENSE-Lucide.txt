@@ -1,4 +1,4 @@
-Ícones ic_house, ic_receipt_text e ic_user_round: Lucide (https://lucide.dev).
+Ícones de traço (ic_house, ic_store, ic_bone e os demais ic_* sem preenchimento): Lucide (https://lucide.dev).
 
 ISC License
 

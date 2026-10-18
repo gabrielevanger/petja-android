@@ -1,0 +1,13 @@
+<!-- Lucide "check" (licença ISC), como no Figma: traço de 1 dp, sem preenchimento. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="28"
+    android:viewportHeight="28">
+    <path
+        android:pathData="M23.3324 7L10.5003 19.8324L4.6676 13.9995"
+        android:strokeWidth="1"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+</vector>

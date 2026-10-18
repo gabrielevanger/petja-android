@@ -50,7 +50,8 @@ class CheckoutScreenTest {
         composeRule.onNodeWithText("Centro · Perto da praça").assertExists()
         composeRule.onNodeWithText("Dinheiro").performScrollTo().performClick()
         assertEquals(PaymentOption.Cash, payment)
-        composeRule.onNodeWithText("Fazer pedido · R$ 66,80").assertIsEnabled().performClick()
+        composeRule.onNodeWithText("R$ 66,80").assertExists()
+        composeRule.onNodeWithText("Fazer pedido").assertIsEnabled().performClick()
         assertEquals(1, submitted)
     }
 
@@ -144,8 +145,9 @@ class CheckoutScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("Pedido #42").assertExists()
-        composeRule.onNodeWithText("A Petshop Lavrado recebeu seu pedido de R$ 66,80", substring = true).assertExists()
+        composeRule.onNodeWithText("Pedido #42", substring = true).assertExists()
+        composeRule.onNodeWithText("A Petshop Lavrado tem 10 minutos", substring = true).assertExists()
+        composeRule.onNodeWithText("Total R$ 66,80").assertExists()
         composeRule.onNodeWithText("Voltar para a vitrine").performClick()
         composeRule.onNodeWithText("Acompanhar pedido").performClick()
         assertEquals(1, back)

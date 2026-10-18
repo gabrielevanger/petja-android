@@ -9,33 +9,41 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.gabrielevanger.xodopet.core.designsystem.R as DesignR
+import io.github.gabrielevanger.xodopet.core.designsystem.component.BadgeTone
 import io.github.gabrielevanger.xodopet.core.designsystem.component.FormField
 import io.github.gabrielevanger.xodopet.core.designsystem.component.LoadingState
 import io.github.gabrielevanger.xodopet.core.designsystem.component.MessageState
 import io.github.gabrielevanger.xodopet.core.designsystem.component.Notice
 import io.github.gabrielevanger.xodopet.core.designsystem.component.SectionTitle
+import io.github.gabrielevanger.xodopet.core.designsystem.component.SelectableOption
+import io.github.gabrielevanger.xodopet.core.designsystem.component.StatusBadge
+import io.github.gabrielevanger.xodopet.core.designsystem.component.SuccessIllustration
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButton
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButtonStyle
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoCard
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.highlight
 import io.github.gabrielevanger.xodopet.core.domain.checkout.CheckoutError
 import io.github.gabrielevanger.xodopet.core.ui.BackTopBar
 import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
@@ -103,31 +111,38 @@ fun CheckoutScreen(state: CheckoutUiState, actions: CheckoutActions) {
 private fun CheckoutForm(state: CheckoutUiState.Ready, actions: CheckoutActions, modifier: Modifier) {
     val spacing = XodoTheme.spacing
     Column(
-        verticalArrangement = Arrangement.spacedBy(spacing.s),
-        modifier = modifier.imePadding().verticalScroll(rememberScrollState()).padding(spacing.m),
+        verticalArrangement = Arrangement.spacedBy(spacing.l),
+        modifier = modifier
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = spacing.l, vertical = spacing.m),
     ) {
-        Text(
-            text = stringResource(R.string.checkout_from_store, state.storeName),
-            style = XodoTheme.typography.sectionTitle,
-        )
         state.error?.let { error ->
             Notice(error.message())
             if (error == CheckoutError.NotSignedIn) {
-                Button(onClick = actions.onSignIn, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.checkout_sign_in))
-                }
+                XodoButton(
+                    text = stringResource(R.string.checkout_sign_in),
+                    onClick = actions.onSignIn,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
-        AddressSection(state, actions)
-        PaymentSection(state, actions)
+        Section { AddressSection(state, actions) }
+        HorizontalDivider(thickness = XodoTheme.sizes.divider)
+        Section { PaymentSection(state, actions) }
         FormField(
             value = state.notes,
             onValueChange = actions.onNotesChange,
             label = stringResource(R.string.checkout_notes),
             imeAction = ImeAction.Done,
         )
-        Summary(state)
+        DeliveryNotices(state)
     }
+}
+
+@Composable
+private fun Section(content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s)) { content() }
 }
 
 @Composable
@@ -135,19 +150,34 @@ private fun AddressSection(state: CheckoutUiState.Ready, actions: CheckoutAction
     SectionTitle(stringResource(R.string.checkout_address_title))
     val form = state.newAddress
     if (form == null) {
-        Column(Modifier.selectableGroup()) {
-            state.addresses.forEach { address ->
-                ChoiceRow(
-                    selected = address.id == state.selectedAddressId,
-                    onClick = { actions.onSelectAddress(address.id) },
+        Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s), modifier = Modifier.selectableGroup()) {
+            state.addresses.forEachIndexed { index, address ->
+                SelectableOption(
                     title = stringResource(R.string.checkout_address_line, address.street, address.number),
                     details = dotSeparated(address.complement, address.neighborhood, address.reference).ifEmpty {
                         null
                     },
+                    selected = address.id == state.selectedAddressId,
+                    onSelect = { actions.onSelectAddress(address.id) },
+                    // O primeiro é o endereço padrão (pino); os outros, prédio, como no layout.
+                    icon = painterResource(
+                        if (index ==
+                            0
+                        ) {
+                            DesignR.drawable.ic_map_pin
+                        } else {
+                            DesignR.drawable.ic_building
+                        },
+                    ),
                 )
             }
         }
-        TextButton(onClick = actions.onNewAddress) { Text(stringResource(R.string.checkout_address_new)) }
+        XodoButton(
+            text = stringResource(R.string.checkout_address_new),
+            onClick = actions.onNewAddress,
+            style = XodoButtonStyle.Text,
+            modifier = Modifier.fillMaxWidth(),
+        )
     } else {
         NewAddressFields(form, actions, canCancel = state.addresses.isNotEmpty())
     }
@@ -188,15 +218,19 @@ private fun NewAddressFields(form: NewAddressForm, actions: CheckoutActions, can
         style = XodoTheme.typography.caption,
         color = XodoTheme.colors.onSurfaceVariant,
     )
-    Row(horizontalArrangement = Arrangement.spacedBy(XodoTheme.spacing.xs)) {
-        Button(onClick = actions.onSaveAddress, enabled = !form.saving) {
-            Text(stringResource(R.string.checkout_address_save))
-        }
-        if (canCancel) {
-            OutlinedButton(onClick = actions.onCancelNewAddress) {
-                Text(stringResource(android.R.string.cancel))
-            }
-        }
+    XodoButton(
+        text = stringResource(R.string.checkout_address_save),
+        onClick = actions.onSaveAddress,
+        loading = form.saving,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (canCancel) {
+        XodoButton(
+            text = stringResource(android.R.string.cancel),
+            onClick = actions.onCancelNewAddress,
+            style = XodoButtonStyle.Outlined,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -221,18 +255,33 @@ private fun AddressInput(
 @Composable
 private fun PaymentSection(state: CheckoutUiState.Ready, actions: CheckoutActions) {
     SectionTitle(stringResource(R.string.checkout_payment_title))
-    Column(Modifier.selectableGroup()) {
+    Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s), modifier = Modifier.selectableGroup()) {
         PaymentOption.entries.forEach { option ->
-            ChoiceRow(
+            val (title, details, icon) = when (option) {
+                PaymentOption.Cash -> Triple(
+                    R.string.checkout_payment_cash,
+                    R.string.checkout_payment_cash_details,
+                    DesignR.drawable.ic_banknote,
+                )
+
+                PaymentOption.Pix -> Triple(
+                    R.string.checkout_payment_pix,
+                    R.string.checkout_payment_pix_details,
+                    DesignR.drawable.ic_banknote,
+                )
+
+                PaymentOption.Card -> Triple(
+                    R.string.checkout_payment_card,
+                    R.string.checkout_payment_card_details,
+                    DesignR.drawable.ic_credit_card,
+                )
+            }
+            SelectableOption(
+                title = stringResource(title),
+                details = stringResource(details),
                 selected = state.payment == option,
-                onClick = { actions.onSelectPayment(option) },
-                title = stringResource(
-                    when (option) {
-                        PaymentOption.Cash -> R.string.checkout_payment_cash
-                        PaymentOption.Pix -> R.string.checkout_payment_pix
-                        PaymentOption.Card -> R.string.checkout_payment_card
-                    },
-                ),
+                onSelect = { actions.onSelectPayment(option) },
+                icon = painterResource(icon),
             )
         }
     }
@@ -246,75 +295,51 @@ private fun PaymentSection(state: CheckoutUiState.Ready, actions: CheckoutAction
     }
 }
 
-/** Opção de escolha única com a linha inteira tocável, como pede a acessibilidade do Material. */
+/** O total fica embaixo; aqui só aparece o que impede o pedido ou ainda está sendo calculado. */
 @Composable
-private fun ChoiceRow(selected: Boolean, onClick: () -> Unit, title: String, details: String? = null) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-            .padding(vertical = XodoTheme.spacing.xxs),
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Column(modifier = Modifier.padding(start = XodoTheme.spacing.xs)) {
-            Text(text = title, style = XodoTheme.typography.body)
-            details?.let {
-                Text(text = it, style = XodoTheme.typography.caption, color = XodoTheme.colors.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-@Composable
-private fun Summary(state: CheckoutUiState.Ready) {
-    SectionTitle(stringResource(R.string.checkout_summary_title))
-    SummaryRow(stringResource(R.string.checkout_subtotal), state.subtotal)
+private fun DeliveryNotices(state: CheckoutUiState.Ready) {
     when (val delivery = state.delivery) {
         DeliveryUi.ChooseAddress -> Notice(stringResource(R.string.checkout_delivery_choose_address))
-
-        DeliveryUi.Calculating -> SummaryRow(
-            stringResource(R.string.checkout_delivery),
-            stringResource(R.string.checkout_delivery_calculating),
-        )
-
+        DeliveryUi.Calculating -> Notice(stringResource(R.string.checkout_delivery_calculating))
         DeliveryUi.OutOfArea -> Notice(stringResource(R.string.checkout_delivery_out_of_area))
-
         DeliveryUi.Error -> Notice(stringResource(R.string.checkout_delivery_error))
-
-        is DeliveryUi.Fee -> {
-            SummaryRow(
-                stringResource(R.string.checkout_delivery),
-                if (delivery.isFree) stringResource(R.string.checkout_delivery_free) else delivery.value,
-            )
-            if (!delivery.storeIsOpen) Notice(stringResource(R.string.checkout_error_store_closed))
-        }
+        is DeliveryUi.Fee -> if (!delivery.storeIsOpen) Notice(stringResource(R.string.checkout_error_store_closed))
     }
-    state.total?.let { SummaryRow(stringResource(R.string.checkout_total), it) }
     state.missingForMinOrder?.let { Notice(stringResource(R.string.checkout_min_order, it, state.minOrder)) }
 }
 
 @Composable
-private fun SummaryRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Text(text = label, style = XodoTheme.typography.body, modifier = Modifier.weight(1f))
-        Text(text = value, style = XodoTheme.typography.price)
+private fun PlaceOrderBar(state: CheckoutUiState.Ready, onSubmit: () -> Unit) {
+    Surface(color = XodoTheme.colors.surfaceContainerLowest) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.m),
+            modifier = Modifier.navigationBarsPadding().padding(XodoTheme.spacing.l),
+        ) {
+            val delivery = state.delivery as? DeliveryUi.Fee
+            if (delivery != null) {
+                SummaryRow(
+                    stringResource(R.string.checkout_delivery),
+                    if (delivery.isFree) stringResource(R.string.checkout_delivery_free) else delivery.value,
+                )
+            }
+            state.total?.let { SummaryRow(stringResource(R.string.checkout_total), it, emphasis = true) }
+            XodoButton(
+                text = stringResource(R.string.checkout_place_order),
+                onClick = onSubmit,
+                enabled = state.canPlaceOrder,
+                loading = state.submitting,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
 @Composable
-private fun PlaceOrderBar(state: CheckoutUiState.Ready, onSubmit: () -> Unit) {
-    Surface(color = XodoTheme.colors.surfaceContainerHigh) {
-        Button(
-            onClick = onSubmit,
-            enabled = state.canPlaceOrder,
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(XodoTheme.spacing.m),
-        ) {
-            Text(
-                state.total?.let { stringResource(R.string.checkout_place_order, it) }
-                    ?: stringResource(R.string.checkout_place_order_disabled),
-            )
-        }
+private fun SummaryRow(label: String, value: String, emphasis: Boolean = false) {
+    val style = if (emphasis) XodoTheme.typography.sectionTitle else XodoTheme.typography.body
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Text(text = label, style = style, modifier = Modifier.weight(1f))
+        Text(text = value, style = if (emphasis) style else XodoTheme.typography.price)
     }
 }
 
@@ -343,20 +368,76 @@ fun OrderPlacedScreen(
     onBackToStorefront: () -> Unit,
     onTrackOrder: () -> Unit = {},
 ) {
-    Scaffold(containerColor = XodoTheme.colors.background) { padding ->
-        Column(
-            verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(padding).consumeWindowInsets(padding).padding(XodoTheme.spacing.l),
-        ) {
-            Text(text = stringResource(R.string.placed_title), style = XodoTheme.typography.screenTitle)
-            Text(text = stringResource(R.string.placed_number, number), style = XodoTheme.typography.sectionTitle)
-            Text(text = stringResource(R.string.placed_text, storeName, total), style = XodoTheme.typography.body)
-            Button(onClick = onTrackOrder, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.placed_track_order))
+    val spacing = XodoTheme.spacing
+    Scaffold(
+        containerColor = XodoTheme.colors.background,
+        topBar = { BackTopBar(stringResource(R.string.placed_title), onBackToStorefront) },
+        bottomBar = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(spacing.xs),
+                modifier = Modifier.navigationBarsPadding().padding(horizontal = spacing.l, vertical = spacing.m),
+            ) {
+                XodoButton(
+                    text = stringResource(R.string.placed_track_order),
+                    onClick = onTrackOrder,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                XodoButton(
+                    text = stringResource(R.string.placed_back_to_storefront),
+                    onClick = onBackToStorefront,
+                    style = XodoButtonStyle.Text,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
-            OutlinedButton(onClick = onBackToStorefront, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.placed_back_to_storefront))
+        },
+    ) { padding ->
+        Column(
+            verticalArrangement = Arrangement.spacedBy(spacing.l),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(padding)
+                .consumeWindowInsets(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = spacing.l, vertical = spacing.l),
+        ) {
+            SuccessIllustration(painterResource(DesignR.drawable.ic_shopping_bag))
+            StatusBadge(stringResource(R.string.placed_status), BadgeTone.Positive)
+            Text(
+                text = stringResource(R.string.placed_headline, number),
+                style = XodoTheme.typography.headline,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stringResource(R.string.placed_text, storeName),
+                style = XodoTheme.typography.message,
+                color = XodoTheme.colors.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            XodoCard(shape = XodoTheme.shapes.panel) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(spacing.s),
+                ) {
+                    Icon(
+                        painter = painterResource(DesignR.drawable.ic_store),
+                        contentDescription = null,
+                        tint = XodoTheme.colors.highlight,
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(spacing.xxs), modifier = Modifier.weight(1f)) {
+                        Text(text = storeName, style = XodoTheme.typography.cardTitle)
+                        Text(
+                            text = stringResource(R.string.placed_total, total),
+                            style = XodoTheme.typography.caption,
+                            color = XodoTheme.colors.onSurfaceVariant,
+                        )
+                    }
+                    Icon(
+                        painter = painterResource(DesignR.drawable.ic_clock),
+                        contentDescription = null,
+                        tint = XodoTheme.colors.primary,
+                        modifier = Modifier.size(XodoTheme.sizes.icon),
+                    )
+                }
             }
         }
     }

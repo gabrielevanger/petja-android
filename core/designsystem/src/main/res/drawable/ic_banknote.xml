@@ -1,0 +1,13 @@
+<!-- Lucide "banknote" (licença ISC), como no Figma: traço de 1 dp, sem preenchimento. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="22dp"
+    android:viewportWidth="22"
+    android:viewportHeight="22">
+    <path
+        android:pathData="M5.49956 11H5.50873M16.5004 11H16.5096M3.66608 5.5H18.3339C19.3465 5.5 20.1674 6.32081 20.1674 7.33333V14.6667C20.1674 15.6792 19.3465 16.5 18.3339 16.5H3.66608C2.65348 16.5 1.8326 15.6792 1.8326 14.6667V7.33333C1.8326 6.32081 2.65348 5.5 3.66608 5.5ZM12.8335 11C12.8335 12.0125 12.0126 12.8333 11 12.8333C9.9874 12.8333 9.16652 12.0125 9.16652 11C9.16652 9.98748 9.9874 9.16667 11 9.16667C12.0126 9.16667 12.8335 9.98748 12.8335 11Z"
+        android:strokeWidth="1"
+        android:strokeColor="#FF000000"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+</vector>
