@@ -30,12 +30,14 @@ class StorefrontScreenTest {
     ) {
         composeRule.setContent {
             XodoTheme {
-                StorefrontScreen(
-                    state = StorefrontUiState(places, places.first(), content),
-                    onSelectPlace = onSelectPlace,
-                    onRetry = onRetry,
-                    onStoreClick = onStoreClick,
-                )
+                StorefrontScreen(state = StorefrontUiState(places, places.first(), content)) { action ->
+                    when (action) {
+                        is StorefrontAction.OnPlaceClick -> onSelectPlace(action.place)
+                        StorefrontAction.OnRetryClick -> onRetry()
+                        is StorefrontAction.OnStoreClick -> onStoreClick(action.storeId)
+                        else -> Unit
+                    }
+                }
             }
         }
     }
@@ -129,13 +131,9 @@ class StorefrontScreenTest {
         var opened = 0
         composeRule.setContent {
             XodoTheme {
-                StorefrontScreen(
-                    state = StorefrontUiState(places, places.first(), StorefrontContent.Loading),
-                    onSelectPlace = {},
-                    onRetry = {},
-                    onStoreClick = {},
-                    onAccountClick = { opened++ },
-                )
+                StorefrontScreen(state = StorefrontUiState(places, places.first(), StorefrontContent.Loading)) {
+                    if (it == StorefrontAction.OnAccountClick) opened++
+                }
             }
         }
 

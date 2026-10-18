@@ -41,9 +41,10 @@ class StorefrontViewModelTest {
     private val places = FakeDeliveryPlaceRepository()
     private val cart = FakeCartRepository()
 
+    /** Como a tela faz: o ViewModel só começa a carregar quando a tela manda OnStart. */
     private fun viewModel() = StorefrontViewModel(LoadStorefront(repository), places, cart) { message, cause ->
         warnings += message to cause
-    }
+    }.apply { onAction(StorefrontAction.OnStart) }
 
     @Test
     fun `loads the first place on start`() = runTest(dispatcher) {
@@ -67,7 +68,7 @@ class StorefrontViewModelTest {
 
         viewModel.uiState.test {
             skipItems(1)
-            viewModel.selectPlace(satelite)
+            viewModel.onAction(StorefrontAction.OnPlaceClick(satelite))
             assertEquals(StorefrontContent.Loading, awaitItem().content)
             val loaded = awaitItem()
             assertEquals(satelite, loaded.selectedPlace)
@@ -82,7 +83,7 @@ class StorefrontViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.selectPlace(BoaVistaSamplePlaces.first())
+        viewModel.onAction(StorefrontAction.OnPlaceClick(BoaVistaSamplePlaces.first()))
         advanceUntilIdle()
 
         assertEquals(1, repository.storesNearCalls.size)
@@ -96,7 +97,7 @@ class StorefrontViewModelTest {
         assertEquals(StorefrontContent.Error, viewModel.uiState.value.content)
         assertEquals("sem rede", warnings.single().second?.message, "a causa vai para o log")
 
-        viewModel.retry()
+        viewModel.onAction(StorefrontAction.OnRetryClick)
         advanceUntilIdle()
 
         assertInstanceOf(StorefrontContent.Loaded::class.java, viewModel.uiState.value.content)
@@ -107,7 +108,7 @@ class StorefrontViewModelTest {
         val viewModel = viewModel()
         val buritis = BoaVistaSamplePlaces.first { it.name == "Buritis" }
 
-        viewModel.selectPlace(buritis)
+        viewModel.onAction(StorefrontAction.OnPlaceClick(buritis))
         advanceUntilIdle()
 
         assertEquals(buritis, viewModel.uiState.value.selectedPlace)
@@ -121,7 +122,7 @@ class StorefrontViewModelTest {
         advanceUntilIdle()
         val buritis = BoaVistaSamplePlaces.first { it.name == "Buritis" }
 
-        viewModel.selectPlace(buritis)
+        viewModel.onAction(StorefrontAction.OnPlaceClick(buritis))
         advanceUntilIdle()
         assertEquals("Buritis", places.place.value?.name)
 
@@ -142,5 +143,37 @@ class StorefrontViewModelTest {
         advanceUntilIdle()
 
         assertEquals(CartBarUi("Petshop Lavrado", 2, "R$ 61,80"), viewModel.uiState.value.cartBar)
+    }
+
+    @Test
+    fun `clicks become navigation events`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(StorefrontAction.OnStoreClick("store-1"))
+            assertEquals(StorefrontEvent.OpenStore("store-1"), awaitItem())
+            viewModel.onAction(StorefrontAction.OnCartClick)
+            assertEquals(StorefrontEvent.OpenCart, awaitItem())
+            viewModel.onAction(StorefrontAction.OnAccountClick)
+            assertEquals(StorefrontEvent.OpenAccount, awaitItem())
+        }
+    }
+
+    @Test
+    fun `starting again does not reload and stop pauses the cart`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(StorefrontAction.OnStop)
+        val line = CartLine("v", "p", "Ração", "1 kg", Money(3090), quantity = 1, maxQuantity = 5)
+        cart.update { Cart("store-1", "Petshop Lavrado", Money(3000), listOf(line)) }
+        advanceUntilIdle()
+        assertEquals(null, viewModel.uiState.value.cartBar, "parada, a tela não ouve o carrinho")
+
+        viewModel.onAction(StorefrontAction.OnStart)
+        advanceUntilIdle()
+        assertEquals("Petshop Lavrado", viewModel.uiState.value.cartBar?.storeName)
+        assertEquals(1, repository.storesNearCalls.size, "voltar para a tela não busca a vitrine de novo")
     }
 }
