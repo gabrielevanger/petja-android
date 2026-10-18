@@ -100,8 +100,9 @@ def main():
     if not base:
         print("Sem relatório da `main` para comparar ainda.\n")
     print(
-        "Pisos: 90% das linhas no projeto, 95% das linhas e 70% dos ramos no `core/domain`, "
-        "90% das linhas no `core/data`. Ramos de telas Compose ficam baixos por natureza: "
+        "Pisos: 80% das linhas em todo módulo (só com os testes dele), 90% no projeto, "
+        "95% das linhas e 70% dos ramos no `core/domain`, 90% das linhas no `core/data`. "
+        "Ramos de telas Compose ficam baixos por natureza: "
         "o compilador gera ramos internos que nenhum teste percorre.",
     )
 
