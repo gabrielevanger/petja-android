@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Textos usados em mais de uma tela. -->
+    <string name="common_retry">Tentar de novo</string>
+    <string name="common_back">Voltar</string>
+    <string name="store_status_open">Aberta</string>
+    <string name="store_status_closed">Fechada</string>
+    <!-- Entre informações curtas na mesma linha: "Centro · 440 m". As aspas preservam os espaços. -->
+    <string name="separator_dot">" · "</string>
+</resources>

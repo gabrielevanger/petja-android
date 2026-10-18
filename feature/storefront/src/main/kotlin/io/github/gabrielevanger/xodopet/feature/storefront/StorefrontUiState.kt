@@ -47,7 +47,8 @@ data class StoreCardUi(
 data class ExternalStoreCardUi(
     val id: String,
     val name: String,
-    val address: String?,
+    val street: String?,
+    val neighborhood: String?,
     val distance: String,
     val whatsappLink: String?,
     val phoneLink: String?,

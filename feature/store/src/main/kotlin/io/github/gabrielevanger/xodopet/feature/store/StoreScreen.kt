@@ -12,17 +12,13 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
@@ -33,17 +29,27 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoSpacing
+import io.github.gabrielevanger.xodopet.core.designsystem.component.BadgeTone
+import io.github.gabrielevanger.xodopet.core.designsystem.component.ErrorState
+import io.github.gabrielevanger.xodopet.core.designsystem.component.LoadingState
+import io.github.gabrielevanger.xodopet.core.designsystem.component.MessageState
+import io.github.gabrielevanger.xodopet.core.designsystem.component.Notice
+import io.github.gabrielevanger.xodopet.core.designsystem.component.SectionTitle
+import io.github.gabrielevanger.xodopet.core.designsystem.component.StatusBadge
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 import io.github.gabrielevanger.xodopet.core.domain.model.PetSpecies
-import kotlinx.collections.immutable.persistentListOf
+import io.github.gabrielevanger.xodopet.core.ui.R as CoreUiR
+import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
 import kotlinx.coroutines.launch
+
+/** Nome da loja numa linha só na barra do topo: nomes longos terminam em reticências. */
+private const val TOP_BAR_TITLE_MAX_LINES = 1
+
+/** Antes da primeira seção da lista vem só o cabeçalho da loja. */
+private const val ITEMS_BEFORE_FIRST_SECTION = 1
 
 @Composable
 fun StoreRoute(onBack: () -> Unit, viewModel: StoreViewModel = hiltViewModel()) {
@@ -65,25 +71,19 @@ fun StoreScreen(
     onProductClick: (productId: String) -> Unit,
     onProductDismiss: () -> Unit,
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize(), color = XodoTheme.colors.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
             TopBar(title = (state as? StoreUiState.Loaded)?.header?.name, onBack = onBack)
             when (state) {
-                StoreUiState.Loading -> Centered {
-                    CircularProgressIndicator()
-                    Text(stringResource(R.string.store_loading), modifier = Modifier.padding(top = XodoSpacing.md))
-                }
+                StoreUiState.Loading -> LoadingState(stringResource(R.string.store_loading))
 
-                StoreUiState.Error -> Centered {
-                    Text(stringResource(R.string.store_error), style = MaterialTheme.typography.bodyLarge)
-                    Button(onClick = onRetry, modifier = Modifier.padding(top = XodoSpacing.md)) {
-                        Text(stringResource(R.string.store_retry))
-                    }
-                }
+                StoreUiState.Error -> ErrorState(
+                    message = stringResource(R.string.store_error),
+                    actionLabel = stringResource(CoreUiR.string.common_retry),
+                    onAction = onRetry,
+                )
 
-                StoreUiState.NotFound -> Centered {
-                    Text(stringResource(R.string.store_not_found), style = MaterialTheme.typography.bodyLarge)
-                }
+                StoreUiState.NotFound -> MessageState(stringResource(R.string.store_not_found))
 
                 is StoreUiState.Loaded -> {
                     Catalog(state, onProductClick)
@@ -96,31 +96,29 @@ fun StoreScreen(
 
 @Composable
 private fun TopBar(title: String?, onBack: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(XodoSpacing.xs)) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(XodoTheme.spacing.xxs)) {
         IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.store_back))
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreUiR.string.common_back))
         }
         if (title != null) {
-            Text(text = title, style = MaterialTheme.typography.titleLarge, maxLines = 1)
+            Text(
+                text = title,
+                style = XodoTheme.typography.screenTitle,
+                maxLines = TOP_BAR_TITLE_MAX_LINES,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
-}
-
-@Composable
-private fun Centered(content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(XodoSpacing.lg),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) { content() }
 }
 
 @Composable
 private fun Catalog(state: StoreUiState.Loaded, onProductClick: (String) -> Unit) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    // Posição de cada cabeçalho de categoria na lista: 1 item do cabeçalho da loja, depois título + produtos.
-    val sectionIndexes = state.sections.runningFold(1) { index, section -> index + 1 + section.products.size }
+    // Posição do título de cada seção na lista: depois do cabeçalho da loja, título + produtos de cada seção.
+    val sectionIndexes = state.sections.runningFold(ITEMS_BEFORE_FIRST_SECTION) { index, section ->
+        index + 1 + section.products.size
+    }
 
     Column {
         if (state.sections.size > 1) {
@@ -135,8 +133,8 @@ private fun Catalog(state: StoreUiState.Loaded, onProductClick: (String) -> Unit
 @Composable
 private fun CategoryChips(sections: List<CatalogSectionUi>, onClick: (position: Int) -> Unit) {
     LazyRow(
-        contentPadding = PaddingValues(horizontal = XodoSpacing.md),
-        horizontalArrangement = Arrangement.spacedBy(XodoSpacing.sm),
+        contentPadding = PaddingValues(horizontal = XodoTheme.spacing.m),
+        horizontalArrangement = Arrangement.spacedBy(XodoTheme.spacing.xs),
     ) {
         items(sections.size, key = { sections[it].categoryId }) { position ->
             SuggestionChip(onClick = { onClick(position) }, label = { Text(sections[position].title) })
@@ -146,33 +144,32 @@ private fun CategoryChips(sections: List<CatalogSectionUi>, onClick: (position: 
 
 @Composable
 private fun CatalogList(state: StoreUiState.Loaded, listState: LazyListState, onProductClick: (String) -> Unit) {
-    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = XodoSpacing.xl)) {
+    val spacing = XodoTheme.spacing
+    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = spacing.xl)) {
         item(key = "header") { StoreHeader(state.header) }
         if (state.sections.isEmpty()) {
             item(key = "empty") {
                 Text(
                     text = stringResource(R.string.store_empty_catalog),
-                    modifier = Modifier.padding(XodoSpacing.md),
+                    style = XodoTheme.typography.body,
+                    modifier = Modifier.padding(spacing.m),
                 )
             }
         }
         state.sections.forEach { section ->
             item(key = "section-${section.categoryId}", contentType = "section") {
-                Text(
+                SectionTitle(
                     text = section.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .padding(
-                            start = XodoSpacing.md,
-                            end = XodoSpacing.md,
-                            top = XodoSpacing.lg,
-                            bottom = XodoSpacing.xs,
-                        )
-                        .semantics { heading() },
+                    modifier = Modifier.padding(
+                        start = spacing.m,
+                        end = spacing.m,
+                        top = spacing.l,
+                        bottom = spacing.xxs,
+                    ),
                 )
             }
-            items(section.products, key = { it.id }, contentType = { "product" }) { product ->
+            items(section.products.size, key = { section.products[it].id }, contentType = { "product" }) { index ->
+                val product = section.products[index]
                 ProductRow(product, onClick = { onProductClick(product.id) })
             }
         }
@@ -181,83 +178,55 @@ private fun CatalogList(state: StoreUiState.Loaded, listState: LazyListState, on
 
 @Composable
 private fun StoreHeader(header: StoreHeaderUi) {
-    Column(modifier = Modifier.padding(horizontal = XodoSpacing.md, vertical = XodoSpacing.sm)) {
+    val spacing = XodoTheme.spacing
+    Column(modifier = Modifier.padding(horizontal = spacing.m, vertical = spacing.xs)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = header.neighborhood,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = XodoTheme.typography.body,
+                color = XodoTheme.colors.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            OpenBadge(header.isOpen)
-        }
-        header.description?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = XodoSpacing.xs),
+            StatusBadge(
+                text = stringResource(
+                    if (header.isOpen) CoreUiR.string.store_status_open else CoreUiR.string.store_status_closed,
+                ),
+                tone = if (header.isOpen) BadgeTone.Positive else BadgeTone.Neutral,
             )
         }
+        header.description?.let {
+            Text(text = it, style = XodoTheme.typography.body, modifier = Modifier.padding(top = spacing.xxs))
+        }
         Text(
-            text = listOfNotNull(
+            text = dotSeparated(
                 stringResource(R.string.store_eta, header.estimatedMinutes),
                 header.minOrder?.let { stringResource(R.string.store_min_order, it) },
-            ).joinToString(" · "),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = XodoSpacing.xs),
+            ),
+            style = XodoTheme.typography.caption,
+            modifier = Modifier.padding(top = spacing.xxs),
         )
         if (!header.isOpen) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth().padding(top = XodoSpacing.sm),
-            ) {
-                Text(
-                    text = stringResource(R.string.store_closed_notice),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(XodoSpacing.md),
-                )
-            }
+            Notice(stringResource(R.string.store_closed_notice), modifier = Modifier.padding(top = spacing.xs))
         }
-    }
-}
-
-/** Texto e cor juntos: aberta ou fechada não depende só da cor (RNF-07). */
-@Composable
-private fun OpenBadge(isOpen: Boolean) {
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        color = if (isOpen) colors.secondaryContainer else colors.surfaceVariant,
-        contentColor = if (isOpen) colors.onSecondaryContainer else colors.onSurfaceVariant,
-        shape = MaterialTheme.shapes.small,
-    ) {
-        Text(
-            text = stringResource(if (isOpen) R.string.store_open else R.string.store_closed),
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(horizontal = XodoSpacing.sm, vertical = XodoSpacing.xs),
-        )
     }
 }
 
 @Composable
 private fun ProductRow(product: ProductRowUi, onClick: () -> Unit) {
+    val spacing = XodoTheme.spacing
+    val contentColor = if (product.isAvailable) XodoTheme.colors.onSurface else XodoTheme.colors.onSurfaceVariant
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = XodoSpacing.md, vertical = XodoSpacing.sm),
+            .padding(horizontal = spacing.m, vertical = spacing.xs),
     ) {
-        val contentColor = if (product.isAvailable) {
-            MaterialTheme.colorScheme.onSurface
-        } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
-        }
-        Text(text = product.name, style = MaterialTheme.typography.bodyLarge, color = contentColor)
+        Text(text = product.name, style = XodoTheme.typography.itemName, color = contentColor)
         Row {
             Text(
                 text = product.brand.orEmpty(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = XodoTheme.typography.caption,
+                color = XodoTheme.colors.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             Text(
@@ -266,61 +235,55 @@ private fun ProductRow(product: ProductRowUi, onClick: () -> Unit) {
                     product.fromPrice -> stringResource(R.string.store_price_from, product.price)
                     else -> product.price
                 },
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (product.isAvailable) FontWeight.SemiBold else FontWeight.Normal,
+                style = if (product.isAvailable) XodoTheme.typography.price else XodoTheme.typography.body,
                 color = contentColor,
             )
         }
     }
-    HorizontalDivider(modifier = Modifier.padding(horizontal = XodoSpacing.md))
+    HorizontalDivider(thickness = XodoTheme.sizes.divider, modifier = Modifier.padding(horizontal = spacing.m))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProductSheet(product: ProductDetailUi, onDismiss: () -> Unit) {
+    val spacing = XodoTheme.spacing
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(modifier = Modifier.padding(start = XodoSpacing.md, end = XodoSpacing.md, bottom = XodoSpacing.xl)) {
-            Text(text = product.name, style = MaterialTheme.typography.titleLarge)
-            val subtitle =
-                listOfNotNull(product.brand, product.species.map { speciesLabel(it) }.joinToString().ifBlank { null })
+        Column(modifier = Modifier.padding(start = spacing.m, end = spacing.m, bottom = spacing.xl)) {
+            Text(text = product.name, style = XodoTheme.typography.screenTitle)
+            val speciesText = dotSeparated(*product.species.map { speciesLabel(it) }.toTypedArray())
+            val subtitle = dotSeparated(product.brand, speciesText)
             if (subtitle.isNotEmpty()) {
-                Text(
-                    text = subtitle.joinToString(" · "),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text(text = subtitle, style = XodoTheme.typography.body, color = XodoTheme.colors.onSurfaceVariant)
             }
             product.description?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = XodoSpacing.sm),
-                )
+                Text(text = it, style = XodoTheme.typography.body, modifier = Modifier.padding(top = spacing.xs))
             }
-            Text(
+            SectionTitle(
                 text = stringResource(R.string.store_options_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = XodoSpacing.md, bottom = XodoSpacing.xs).semantics { heading() },
+                modifier = Modifier.padding(top = spacing.m, bottom = spacing.xxs),
             )
-            product.variants.forEach { variant ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = XodoSpacing.xs)) {
-                    Text(text = variant.label, modifier = Modifier.weight(1f))
-                    Text(
-                        text = if (variant.isAvailable) variant.price else stringResource(R.string.store_unavailable),
-                        fontWeight = if (variant.isAvailable) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (variant.isAvailable) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
-            }
+            product.variants.forEach { variant -> VariantRow(variant) }
             Text(
                 text = stringResource(R.string.store_cart_soon),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = XodoSpacing.md),
+                style = XodoTheme.typography.caption,
+                color = XodoTheme.colors.onSurfaceVariant,
+                modifier = Modifier.padding(top = spacing.m),
+            )
+        }
+    }
+}
+
+@Composable
+private fun VariantRow(variant: VariantUi) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = XodoTheme.spacing.xxs)) {
+        Text(text = variant.label, style = XodoTheme.typography.body, modifier = Modifier.weight(1f))
+        if (variant.isAvailable) {
+            Text(text = variant.price, style = XodoTheme.typography.price)
+        } else {
+            Text(
+                text = stringResource(R.string.store_unavailable),
+                style = XodoTheme.typography.body,
+                color = XodoTheme.colors.onSurfaceVariant,
             )
         }
     }
@@ -338,36 +301,3 @@ private fun speciesLabel(species: PetSpecies): String = stringResource(
         PetSpecies.OTHER -> R.string.species_other
     },
 )
-
-@Preview(showBackground = true)
-@Composable
-private fun StorePreview() {
-    XodoTheme {
-        StoreScreen(
-            state = StoreUiState.Loaded(
-                header = StoreHeaderUi(
-                    "Petshop Lavrado",
-                    "Centro",
-                    "Ração, petiscos e acessórios.",
-                    false,
-                    40,
-                    "R$ 30,00",
-                ),
-                sections = persistentListOf(
-                    CatalogSectionUi(
-                        1,
-                        "Ração",
-                        persistentListOf(
-                            ProductRowUi("1", "Ração Golden Adultos", "Golden", "R$ 30,90", true, true),
-                            ProductRowUi("2", "Ração Pedigree Adultos", "Pedigree", null, false, false),
-                        ),
-                    ),
-                ),
-            ),
-            onBack = {},
-            onRetry = {},
-            onProductClick = {},
-            onProductDismiss = {},
-        )
-    }
-}

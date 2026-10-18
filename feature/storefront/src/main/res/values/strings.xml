@@ -4,11 +4,8 @@
     <string name="storefront_sample_places_hint">Pontos de teste até o endereço com mapa chegar</string>
     <string name="storefront_loading">Procurando petshops perto de você</string>
     <string name="storefront_error">Não foi possível carregar as lojas. Confira a internet e tente de novo.</string>
-    <string name="storefront_retry">Tentar de novo</string>
 
     <string name="storefront_partners_title">Petshops que entregam aqui</string>
-    <string name="storefront_open">Aberta</string>
-    <string name="storefront_closed">Fechada</string>
     <string name="storefront_eta">%1$d min</string>
     <string name="storefront_delivery_fee">Entrega %1$s</string>
     <string name="storefront_free_delivery">Entrega grátis</string>
