@@ -8,6 +8,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
+import io.github.gabrielevanger.xodopet.feature.cart.cartScreen
+import io.github.gabrielevanger.xodopet.feature.cart.navigateToCart
 import io.github.gabrielevanger.xodopet.feature.store.navigateToStore
 import io.github.gabrielevanger.xodopet.feature.store.storeScreen
 import io.github.gabrielevanger.xodopet.feature.storefront.StorefrontDestination
@@ -24,8 +26,12 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 // Cada feature declara as próprias rotas; o app só liga uma tela à outra.
                 NavHost(navController = navController, startDestination = StorefrontDestination) {
-                    storefrontScreen(onStoreClick = navController::navigateToStore)
-                    storeScreen(onBack = navController::popBackStack)
+                    storefrontScreen(
+                        onStoreClick = navController::navigateToStore,
+                        onCartClick = navController::navigateToCart,
+                    )
+                    storeScreen(onBack = navController::popBackStack, onCartClick = navController::navigateToCart)
+                    cartScreen(onBack = navController::popBackStack)
                 }
             }
         }

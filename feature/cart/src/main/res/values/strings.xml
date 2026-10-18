@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt">
+    <string name="cart_title">Carrinho</string>
+    <string name="cart_loading">Abrindo o carrinho</string>
+    <string name="cart_empty">Seu carrinho está vazio. Escolha uma loja na vitrine para começar.</string>
+    <string name="cart_from_store">Pedido na %1$s</string>
+    <string name="cart_deliver_to">Entregar em %1$s</string>
+    <string name="cart_clear">Esvaziar carrinho</string>
+
+    <string name="cart_decrease">Tirar uma unidade de %1$s</string>
+    <string name="cart_remove">Remover %1$s do carrinho</string>
+    <string name="cart_increase">Adicionar uma unidade de %1$s</string>
+    <string name="cart_unit_price">%1$s cada</string>
+
+    <string name="cart_subtotal">Subtotal</string>
+    <string name="cart_delivery">Entrega</string>
+    <string name="cart_total">Total</string>
+    <string name="cart_delivery_calculating">Calculando…</string>
+    <string name="cart_delivery_free">Grátis</string>
+    <string name="cart_delivery_no_place">Escolha onde entregar na vitrine para ver a taxa.</string>
+    <string name="cart_delivery_out_of_area">A loja não entrega em %1$s. Escolha outro lugar na vitrine.</string>
+    <string name="cart_delivery_error">Não foi possível calcular a entrega agora.</string>
+    <string name="cart_store_closed">A loja está fechada agora: dá para montar o carrinho, mas não para pedir.</string>
+    <string name="cart_min_order">Faltam %1$s para o pedido mínimo de %2$s.</string>
+
+    <string name="cart_checkout">Finalizar pedido</string>
+    <string name="cart_checkout_soon">Finalizar pedido chega na próxima versão.</string>
+</resources>
