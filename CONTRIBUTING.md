@@ -47,7 +47,30 @@ git config core.hooksPath .githooks
 
 O CI roda o mesmo hook em todos os commits de um PR, então pular com `--no-verify` não adianta.
 
+## Interface: tokens e textos
+
+Telas não declaram valores soltos. Tudo vem do `core/designsystem` e dos arquivos `strings.xml`:
+
+| Em vez de | Use |
+|---|---|
+| `16.dp`, `12.sp` | `XodoTheme.spacing.m`, `XodoTheme.sizes.*`, estilos de `XodoTheme.typography` |
+| `MaterialTheme.typography.bodySmall`, `FontWeight.Bold` | o papel do texto: `XodoTheme.typography.caption`, `.price`, `.sectionTitle`... |
+| `Color(0xFF...)`, `MaterialTheme.colorScheme` | `XodoTheme.colors.primary`, `.onSurfaceVariant`... |
+| `Text("Tentar de novo")` | `stringResource(R.string....)`; textos usados em várias telas ficam em `core/ui` |
+| `joinToString(" · ")` | `dotSeparated(...)` |
+| Selo, título de seção, carregando, erro | `StatusBadge`, `SectionTitle`, `LoadingState`, `ErrorState`, `MessageState`, `Notice` |
+
+Número que não é medida de tela (limite, quantidade, conversão) vira constante com nome e comentário.
+
+Os tokens ficam em Kotlin, e não em `res/values/dimens.xml`: no Compose eles são tipados, entram no tema
+e trocam junto com ele. O `scripts/check-ui-tokens.sh` confere a regra localmente e no CI; previews
+(`*Preview.kt`) e testes ficam de fora.
+
 ## Antes de abrir o PR
+
+```bash
+scripts/check-ui-tokens.sh
+```
 
 ```bash
 ./gradlew ktlintCheck :app:lintDebug test
