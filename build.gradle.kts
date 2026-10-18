@@ -24,4 +24,5 @@ dependencies {
     kover(projects.core.ui)
     kover(projects.feature.storefront)
     kover(projects.feature.store)
+    kover(projects.feature.cart)
 }
