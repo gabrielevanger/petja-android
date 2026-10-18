@@ -43,6 +43,26 @@ jobs:
       - name: Testes unitários
         run: ./gradlew test
 
+      # Usa os resultados dos testes acima; falha se algum módulo ficar abaixo do piso (ver CONTRIBUTING).
+      - name: Cobertura de testes (Kover)
+        run: ./gradlew koverXmlReportCoverage koverHtmlReportCoverage koverVerifyCoverage
+
+      - name: Resumo da cobertura
+        if: always()
+        run: |
+          if [ -f build/reports/kover/reportCoverage.xml ]; then
+            scripts/coverage-summary.py >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura-${{ github.sha }}
+          path: build/reports/kover/htmlCoverage/
+          if-no-files-found: ignore
+          retention-days: 14
+
       # Sem supabase.url no CI: o APK abre, mas mostra o erro de conexão na vitrine.
       - name: APK debug
         run: ./gradlew :app:assembleDebug
