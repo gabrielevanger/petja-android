@@ -12,6 +12,7 @@ supabase/
     ..._realtime_storage_cron.sql   Realtime, bucket de fotos e cancelamento automático
   seed.sql                          dados fictícios de Boa Vista
   dev/claim_store.sql               liga a sua conta a uma loja (admin + dono)
+  dev/advance_order.sql             anda um pedido para a próxima etapa, como a loja faria
   tests/                            testes das regras e da RLS, sem precisar de Supabase
 ```
 
