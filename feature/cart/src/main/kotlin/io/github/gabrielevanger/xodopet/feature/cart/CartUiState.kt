@@ -22,7 +22,12 @@ sealed interface CartUiState {
         val total: String?,
         val minOrder: String,
         val missingForMinOrder: String?,
-    ) : CartUiState
+        val signedIn: Boolean = false,
+    ) : CartUiState {
+        /** O pedido só segue com taxa conhecida, loja aberta e pedido mínimo atingido (RF-44). */
+        val canCheckout: Boolean
+            get() = total != null && missingForMinOrder == null && (delivery as? DeliveryUi.Fee)?.storeIsOpen == true
+    }
 }
 
 @Immutable

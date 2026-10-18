@@ -37,7 +37,12 @@ import io.github.gabrielevanger.xodopet.core.ui.R as CoreUiR
 import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
 
 @Composable
-fun CartRoute(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
+fun CartRoute(
+    onBack: () -> Unit,
+    onCheckout: () -> Unit,
+    onSignIn: () -> Unit,
+    viewModel: CartViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     CartScreen(
         state = state,
@@ -45,6 +50,8 @@ fun CartRoute(onBack: () -> Unit, viewModel: CartViewModel = hiltViewModel()) {
         onIncrease = viewModel::increase,
         onDecrease = viewModel::decrease,
         onClear = viewModel::clear,
+        onCheckout = onCheckout,
+        onSignIn = onSignIn,
     )
 }
 
@@ -55,11 +62,13 @@ fun CartScreen(
     onIncrease: (variantId: String, quantity: Int) -> Unit,
     onDecrease: (variantId: String, quantity: Int) -> Unit,
     onClear: () -> Unit,
+    onCheckout: () -> Unit = {},
+    onSignIn: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = XodoTheme.colors.background,
         topBar = { TopBar(onBack) },
-        bottomBar = { if (state is CartUiState.Loaded) CheckoutBar() },
+        bottomBar = { if (state is CartUiState.Loaded) CheckoutBar(state, onCheckout, onSignIn) },
     ) { padding ->
         val modifier = Modifier.padding(padding).consumeWindowInsets(padding)
         when (state) {
@@ -202,24 +211,16 @@ private fun SummaryRow(label: String, value: String, emphasis: Boolean = false) 
     }
 }
 
-/** O pedido em si é a #16: o botão já aparece no lugar certo, desabilitado e explicado. */
+/** Sem login, o botão leva para entrar e volta para o carrinho; logado, segue para o checkout. */
 @Composable
-private fun CheckoutBar() {
-    val spacing = XodoTheme.spacing
+private fun CheckoutBar(state: CartUiState.Loaded, onCheckout: () -> Unit, onSignIn: () -> Unit) {
     Surface(color = XodoTheme.colors.surfaceContainerHigh) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(spacing.m),
+        Button(
+            onClick = if (state.signedIn) onCheckout else onSignIn,
+            enabled = state.canCheckout,
+            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(XodoTheme.spacing.m),
         ) {
-            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.cart_checkout))
-            }
-            Text(
-                text = stringResource(R.string.cart_checkout_soon),
-                style = XodoTheme.typography.caption,
-                color = XodoTheme.colors.onSurfaceVariant,
-                modifier = Modifier.padding(top = spacing.xxs),
-            )
+            Text(stringResource(if (state.signedIn) R.string.cart_checkout else R.string.cart_sign_in_to_checkout))
         }
     }
 }

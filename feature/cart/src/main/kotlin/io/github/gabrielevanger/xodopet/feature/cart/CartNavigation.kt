@@ -10,6 +10,6 @@ data object CartDestination
 
 fun NavController.navigateToCart() = navigate(CartDestination) { launchSingleTop = true }
 
-fun NavGraphBuilder.cartScreen(onBack: () -> Unit) {
-    composable<CartDestination> { CartRoute(onBack = onBack) }
+fun NavGraphBuilder.cartScreen(onBack: () -> Unit, onCheckout: () -> Unit, onSignIn: () -> Unit) {
+    composable<CartDestination> { CartRoute(onBack = onBack, onCheckout = onCheckout, onSignIn = onSignIn) }
 }

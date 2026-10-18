@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gabrielevanger.xodopet.core.domain.DiagnosticLog
+import io.github.gabrielevanger.xodopet.core.domain.account.AccountRepository
+import io.github.gabrielevanger.xodopet.core.domain.account.AccountState
 import io.github.gabrielevanger.xodopet.core.domain.cart.CartActions
 import io.github.gabrielevanger.xodopet.core.domain.cart.CartRepository
 import io.github.gabrielevanger.xodopet.core.domain.delivery.DeliveryPlaceRepository
@@ -45,6 +47,7 @@ class CartViewModel @Inject constructor(
     deliveryPlaces: DeliveryPlaceRepository,
     private val quoteDelivery: QuoteDelivery,
     private val cartActions: CartActions,
+    accounts: AccountRepository,
     private val log: DiagnosticLog,
 ) : ViewModel() {
 
@@ -75,11 +78,10 @@ class CartViewModel @Inject constructor(
     val uiState: StateFlow<CartUiState> = combine(
         cartRepository.cart,
         deliveryPlaces.place,
-        quote.onStart {
-            emit(QuoteState.Calculating)
-        },
-    ) { cart, place, quote ->
-        cart?.toUiState(place, quote) ?: CartUiState.Empty
+        quote.onStart { emit(QuoteState.Calculating) },
+        accounts.state,
+    ) { cart, place, quote, account ->
+        cart?.toUiState(place, quote)?.copy(signedIn = account is AccountState.SignedIn) ?: CartUiState.Empty
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), CartUiState.Loading)
 
     fun increase(variantId: String, currentQuantity: Int) = launch {
