@@ -68,6 +68,43 @@ Os tokens ficam em Kotlin, e não em `res/values/dimens.xml`: no Compose eles s�
 e trocam junto com ele. O `scripts/check-ui-tokens.sh` confere a regra localmente e no CI; previews
 (`*Preview.kt`) e testes ficam de fora.
 
+## Telas e ViewModels
+
+Cada tela tem o seu conjunto de arquivos. Módulos com mais de uma tela usam um subpacote por tela
+(`orders/list`, `orders/details`). Exemplo: `feature/storefront`.
+
+```
+StorefrontUiState.kt    estado da tela, inclusive o carregando e o erro
+StorefrontAction.kt     o que a tela pede: OnStart, OnStop, OnPlaceClick, OnStoreClick...
+StorefrontEvent.kt      o que acontece uma vez só: navegar, tocar som, mostrar snackbar
+StorefrontViewModel.kt  recebe Action, atualiza o UiState e manda Event
+StorefrontScreen.kt     Route (liga ViewModel, ciclo de vida e navegação) e Screen (só desenha)
+```
+
+1. **Entrada única.** A tela chama só `viewModel.onAction(...)`, e o ViewModel decide com um `when` exaustivo.
+   A `Screen` recebe `state` e `onAction`, o que facilita os testes e os previews.
+2. **A carga começa pela tela.** A `Route` manda `OnStart` e `OnStop` com `LifecycleEventEffect`.
+   Carga única tem uma guarda (`started`) para a rotação não repetir a busca. O que fica escutando
+   (Realtime, carrinho) liga no `OnStart` e cancela o `Job` no `OnStop`.
+3. **Cada carga é uma corrente sobre um `Flow`:**
+   ```kotlin
+   loading?.cancel()
+   loading = flow { emit(loadStorefront(point)) }
+       .onStart { _uiState.update { it.copy(content = Loading) } }
+       .onEach { content -> _uiState.update { it.copy(content = content) } }
+       .catch { _uiState.update { it.copy(content = Error) } } // sempre por último: só pega o que vem antes
+       .launchIn(viewModelScope)
+   ```
+   O `Job` fica guardado e é cancelado antes de começar outra carga igual, para uma resposta velha não
+   sobrescrever a nova.
+4. **Um estado só.** `MutableStateFlow` privado, exposto com `asStateFlow()` e alterado com `update`.
+   Carregando, erro e "enviando" ficam no estado, nunca como evento.
+5. **Eventos** vão por `Channel(Channel.BUFFERED)` com `receiveAsFlow()`. A `Route` coleta com
+   `CollectEvents` (de `core/ui`), que só entrega com a tela visível e não perde o evento enquanto ela não está.
+6. **Cargas em paralelo** usam `coroutineScope { async { } ... awaitAll() }`.
+7. **Testes do ViewModel** mandam `OnStart` como a tela faz, depois as Actions, e conferem o `uiState` e os
+   `events` (com Turbine).
+
 ## Cobertura de testes
 
 O Kover mede a cobertura dos testes unitários e o CI falha abaixo destes pisos:
