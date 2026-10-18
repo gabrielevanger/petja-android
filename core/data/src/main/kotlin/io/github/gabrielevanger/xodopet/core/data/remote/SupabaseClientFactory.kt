@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.AuthConfig
 import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.ktor.client.engine.HttpClientEngine
 import kotlinx.serialization.json.Json
@@ -45,4 +46,6 @@ internal fun createXodoSupabaseClient(
         flowType = FlowType.PKCE
         authOverrides()
     }
+    // Status do pedido ao vivo (RF-60). Só conecta quando alguém escuta um canal.
+    install(Realtime)
 }
