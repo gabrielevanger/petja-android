@@ -11,6 +11,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 
 enum class FormFieldType { Text, Name, Email, Password }
 
@@ -37,6 +38,7 @@ fun FormField(
         supportingText = error?.let { { Text(it) } },
         enabled = enabled,
         singleLine = true,
+        shape = XodoTheme.shapes.card,
         visualTransformation = if (type ==
             FormFieldType.Password
         ) {
