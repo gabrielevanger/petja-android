@@ -3,11 +3,10 @@
     <string name="checkout_title">Finalizar pedido</string>
     <string name="checkout_loading">Preparando seu pedido</string>
     <string name="checkout_empty">Seu carrinho está vazio.</string>
-    <string name="checkout_from_store">Pedido na %1$s</string>
 
-    <string name="checkout_address_title">Onde entregar</string>
+    <string name="checkout_address_title">Entregar em</string>
     <string name="checkout_address_line">%1$s, %2$s</string>
-    <string name="checkout_address_new">Usar outro endereço</string>
+    <string name="checkout_address_new">+ Novo endereço</string>
     <string name="checkout_address_save">Usar este endereço</string>
     <string name="checkout_address_point_note">Por enquanto, o ponto no mapa é o lugar escolhido na vitrine (%1$s).</string>
     <string name="checkout_field_street">Rua</string>
@@ -19,26 +18,26 @@
 
     <string name="checkout_payment_title">Pagamento na entrega</string>
     <string name="checkout_payment_cash">Dinheiro</string>
+    <string name="checkout_payment_cash_details">Pague ao entregador</string>
     <string name="checkout_payment_pix">Pix na entrega</string>
-    <string name="checkout_payment_card">Cartão na maquininha</string>
+    <string name="checkout_payment_pix_details">O entregador mostra o QR Code</string>
+    <string name="checkout_payment_card">Cartão</string>
+    <string name="checkout_payment_card_details">Débito ou crédito na maquininha</string>
     <string name="checkout_change_for">Troco para quanto? (opcional)</string>
     <string name="checkout_change_invalid">Escreva só o valor, como 100 ou 100,50.</string>
 
     <string name="checkout_notes">Observação para a loja (opcional)</string>
 
-    <string name="checkout_summary_title">Resumo</string>
-    <string name="checkout_subtotal">Subtotal</string>
     <string name="checkout_delivery">Entrega</string>
     <string name="checkout_total">Total</string>
-    <string name="checkout_delivery_calculating">Calculando…</string>
+    <string name="checkout_delivery_calculating">Calculando a entrega…</string>
     <string name="checkout_delivery_free">Grátis</string>
     <string name="checkout_delivery_choose_address">Escolha o endereço para ver a taxa.</string>
     <string name="checkout_delivery_out_of_area">A loja não entrega nesse endereço.</string>
     <string name="checkout_delivery_error">Não foi possível calcular a entrega agora.</string>
     <string name="checkout_min_order">Faltam %1$s para o pedido mínimo de %2$s.</string>
 
-    <string name="checkout_place_order">Fazer pedido · %1$s</string>
-    <string name="checkout_place_order_disabled">Fazer pedido</string>
+    <string name="checkout_place_order">Fazer pedido</string>
 
     <string name="checkout_sign_in">Entrar</string>
     <string name="checkout_error_not_signed_in">Entre na sua conta para fazer o pedido.</string>
@@ -54,8 +53,10 @@
     <string name="checkout_error_unknown">Algo deu errado e o pedido não foi feito. Tente de novo.</string>
 
     <string name="placed_title">Pedido enviado</string>
-    <string name="placed_number">Pedido #%1$d</string>
-    <string name="placed_text">A %1$s recebeu seu pedido de %2$s. O pagamento é na entrega.</string>
+    <string name="placed_status">Aguardando aceite</string>
+    <string name="placed_headline">Pedido #%1$d\nenviado!</string>
+    <string name="placed_text">A %1$s tem 10 minutos para aceitar. Você acompanha tudo por aqui.</string>
+    <string name="placed_total">Total %1$s</string>
     <string name="placed_track_order">Acompanhar pedido</string>
     <string name="placed_back_to_storefront">Voltar para a vitrine</string>
 </resources>
