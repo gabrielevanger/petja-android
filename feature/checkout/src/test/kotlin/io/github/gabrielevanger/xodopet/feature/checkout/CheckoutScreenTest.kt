@@ -135,13 +135,20 @@ class CheckoutScreenTest {
     @Test
     fun orderPlaced() {
         var back = 0
+        var track = 0
         composeRule.setContent {
-            XodoTheme { OrderPlacedScreen(42, "Petshop Lavrado", "R$ 66,80", onBackToStorefront = { back++ }) }
+            XodoTheme {
+                OrderPlacedScreen(42, "Petshop Lavrado", "R$ 66,80", onBackToStorefront = {
+                    back++
+                }, onTrackOrder = { track++ })
+            }
         }
 
         composeRule.onNodeWithText("Pedido #42").assertExists()
         composeRule.onNodeWithText("A Petshop Lavrado recebeu seu pedido de R$ 66,80", substring = true).assertExists()
         composeRule.onNodeWithText("Voltar para a vitrine").performClick()
+        composeRule.onNodeWithText("Acompanhar pedido").performClick()
         assertEquals(1, back)
+        assertEquals(1, track)
     }
 }

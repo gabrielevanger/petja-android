@@ -45,12 +45,18 @@ class AccountScreensTest {
     @Test
     fun signedInShowsNameAndSignsOut() {
         var signOut = 0
-        show { AccountScreen(AccountState.SignedIn(ANA), AccountNotice.EmailConfirmed, {}, {}, {}, { signOut++ }) }
+        var orders = 0
+        show {
+            AccountScreen(AccountState.SignedIn(ANA), AccountNotice.EmailConfirmed, {
+            }, {}, {}, { signOut++ }, { orders++ })
+        }
 
         composeRule.onNodeWithText("E-mail confirmado. Sua conta está pronta.").assertExists()
         composeRule.onNodeWithText("Olá, Ana Souza").assertExists()
+        composeRule.onNodeWithText("Meus pedidos").performClick()
         composeRule.onNodeWithText("Sair da conta").performClick()
         assertEquals(1, signOut)
+        assertEquals(1, orders)
     }
 
     @Test

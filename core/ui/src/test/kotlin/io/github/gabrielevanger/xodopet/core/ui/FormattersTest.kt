@@ -42,4 +42,19 @@ class FormattersTest {
         assertEquals(null, parseBrl("cem"))
         assertEquals(null, parseBrl(""))
     }
+
+    @Test
+    fun `date and time in Boa Vista`() {
+        val instant = java.time.Instant.parse("2026-10-18T14:15:00Z")
+
+        assertEquals(
+            "18/10 às 10:15",
+            formatDateTime(
+                instant,
+                "dd/MM 'às' HH:mm",
+                java.time.ZoneId.of("America/Boa_Vista"),
+                java.util.Locale.forLanguageTag("pt-BR"),
+            ),
+        )
+    }
 }

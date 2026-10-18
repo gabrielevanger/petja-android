@@ -43,10 +43,19 @@ fun AccountRoute(
     onBack: () -> Unit,
     onSignIn: () -> Unit,
     onSignUp: () -> Unit,
+    onOrders: () -> Unit,
     viewModel: AccountViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    AccountScreen(state, viewModel.notice, onBack, onSignIn, onSignUp, onSignOut = viewModel::signOut)
+    AccountScreen(
+        state,
+        viewModel.notice,
+        onBack,
+        onSignIn,
+        onSignUp,
+        onSignOut = viewModel::signOut,
+        onOrders = onOrders,
+    )
 }
 
 @Composable
@@ -57,6 +66,7 @@ fun AccountScreen(
     onSignIn: () -> Unit,
     onSignUp: () -> Unit,
     onSignOut: () -> Unit,
+    onOrders: () -> Unit = {},
 ) {
     AccountScaffold(title = stringResource(R.string.account_title), onBack = onBack) {
         notice?.let { Notice(stringResource(it.messageRes())) }
@@ -84,6 +94,9 @@ fun AccountScreen(
                     style = XodoTheme.typography.body,
                     color = XodoTheme.colors.onSurfaceVariant,
                 )
+                Button(onClick = onOrders, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.account_orders))
+                }
                 OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.account_sign_out))
                 }

@@ -14,4 +14,7 @@
         <item quantity="many">%1$d de itens</item>
         <item quantity="other">%1$d itens</item>
     </plurals>
+    <!-- Data e hora curtas: "18/10 às 11:15". Texto entre aspas simples sai literal. -->
+    <string name="date_time_pattern" translatable="false">dd/MM \'às\' HH:mm</string>
+    <string name="date_time_locale" translatable="false">pt-BR</string>
 </resources>

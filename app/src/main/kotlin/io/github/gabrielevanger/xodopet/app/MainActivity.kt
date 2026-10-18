@@ -19,6 +19,9 @@ import io.github.gabrielevanger.xodopet.feature.cart.cartScreen
 import io.github.gabrielevanger.xodopet.feature.cart.navigateToCart
 import io.github.gabrielevanger.xodopet.feature.checkout.checkoutScreens
 import io.github.gabrielevanger.xodopet.feature.checkout.navigateToCheckout
+import io.github.gabrielevanger.xodopet.feature.orders.navigateToOrder
+import io.github.gabrielevanger.xodopet.feature.orders.navigateToOrders
+import io.github.gabrielevanger.xodopet.feature.orders.ordersScreens
 import io.github.gabrielevanger.xodopet.feature.store.navigateToStore
 import io.github.gabrielevanger.xodopet.feature.store.storeScreen
 import io.github.gabrielevanger.xodopet.feature.storefront.StorefrontDestination
@@ -63,8 +66,17 @@ class MainActivity : ComponentActivity() {
                         navController,
                         onSignIn = navController::navigateToSignIn,
                         onBackToStorefront = { navController.popBackStack(StorefrontDestination, inclusive = false) },
+                        onOpenOrder = { orderId ->
+                            navController.popBackStack(StorefrontDestination, inclusive = false)
+                            navController.navigateToOrder(orderId)
+                        },
                     )
-                    accountScreens(navController)
+                    accountScreens(navController, onOrders = navController::navigateToOrders)
+                    ordersScreens(
+                        navController,
+                        onSignIn = navController::navigateToSignIn,
+                        onOpenCart = navController::navigateToCart,
+                    )
                 }
             }
         }

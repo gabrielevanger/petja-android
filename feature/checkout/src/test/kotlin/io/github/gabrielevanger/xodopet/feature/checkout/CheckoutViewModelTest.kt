@@ -164,7 +164,7 @@ class CheckoutViewModelTest {
         assertEquals(PaymentChoice.Cash(Money(10000)), call.payment)
         assertEquals(Money(6680), call.expectedTotal)
         assertEquals("Tocar a campainha", call.notes)
-        assertEquals(PlacedOrderUi(1, "Petshop Lavrado", "R$ 66,80"), viewModel.ready().placed)
+        assertEquals(PlacedOrderUi("pedido-1", 1, "Petshop Lavrado", "R$ 66,80"), viewModel.ready().placed)
         assertNull(cart.cart.value)
     }
 

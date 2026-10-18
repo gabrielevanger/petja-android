@@ -56,6 +56,6 @@
     <string name="placed_title">Pedido enviado</string>
     <string name="placed_number">Pedido #%1$d</string>
     <string name="placed_text">A %1$s recebeu seu pedido de %2$s. O pagamento é na entrega.</string>
-    <string name="placed_tracking_soon">Acompanhar o pedido pelo app chega na próxima versão.</string>
+    <string name="placed_track_order">Acompanhar pedido</string>
     <string name="placed_back_to_storefront">Voltar para a vitrine</string>
 </resources>

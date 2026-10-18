@@ -79,4 +79,4 @@ sealed interface DeliveryUi {
 }
 
 @Immutable
-data class PlacedOrderUi(val number: Long, val storeName: String, val total: String)
+data class PlacedOrderUi(val id: String, val number: Long, val storeName: String, val total: String)
