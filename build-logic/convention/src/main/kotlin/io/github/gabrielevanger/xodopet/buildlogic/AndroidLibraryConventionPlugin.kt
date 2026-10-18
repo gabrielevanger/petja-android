@@ -15,6 +15,7 @@ class AndroidLibraryConventionPlugin : Plugin<Project> {
             }
             configureUnitTests()
             configureKtlint()
+            configureKover(android = true)
         }
     }
 }

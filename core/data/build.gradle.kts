@@ -1,3 +1,5 @@
+import io.github.gabrielevanger.xodopet.buildlogic.minimumCoverage
+
 plugins {
     id("xodo.android.library")
     id("xodo.android.hilt")
@@ -16,3 +18,5 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
     testImplementation(testFixtures(projects.core.domain))
 }
+
+minimumCoverage(lines = 90)

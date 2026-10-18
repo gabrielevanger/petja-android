@@ -19,6 +19,12 @@ jobs:
     name: "App: análise estática, testes e APK"
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      # Baixar o relatório de cobertura da main, que é artefato de outra execução.
+      actions: read
+      # Comentar a cobertura no PR.
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
 
@@ -42,6 +48,67 @@ jobs:
 
       - name: Testes unitários
         run: ./gradlew test
+
+      # Usa os resultados dos testes acima; falha se algum módulo ficar abaixo do piso (ver CONTRIBUTING).
+      - name: Cobertura de testes (Kover)
+        run: ./gradlew koverXmlReportCoverage koverHtmlReportCoverage koverVerifyCoverage
+
+      # Na main, o XML fica guardado para os PRs compararem com ele.
+      - name: Guardar cobertura da main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura-xml
+          path: build/reports/kover/reportCoverage.xml
+          retention-days: 90
+
+      - name: Baixar cobertura da main
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --event push \
+            --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          if [ -n "$run_id" ]; then
+            gh run download "$run_id" --repo "$GITHUB_REPOSITORY" --name cobertura-xml --dir base-coverage \
+              || echo "A última execução da main ainda não tem o relatório de cobertura."
+          fi
+
+      - name: Resumo da cobertura
+        if: always()
+        run: |
+          if [ -f build/reports/kover/reportCoverage.xml ]; then
+            scripts/coverage-summary.py build/reports/kover/reportCoverage.xml base-coverage/reportCoverage.xml \
+              | tee coverage-comment.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Um comentário só por PR: o CI acha o anterior pela marca invisível e atualiza em vez de criar outro.
+      - name: Comentar cobertura no PR
+        if: always() && github.event_name == 'pull_request' && hashFiles('coverage-comment.md') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          comment_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- xodo-coverage -->"))) | .id' \
+            | head -n 1)
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          printf '\nRelatório completo: artefato `cobertura-%s` [desta execução](%s).\n' "$GITHUB_SHA" "$run_url" \
+            >> coverage-comment.md
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment_id" -F body=@coverage-comment.md > /dev/null
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@coverage-comment.md > /dev/null
+          fi
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura-${{ github.sha }}
+          path: build/reports/kover/htmlCoverage/
+          if-no-files-found: ignore
+          retention-days: 14
 
       # Sem supabase.url no CI: o APK abre, mas mostra o erro de conexão na vitrine.
       - name: APK debug

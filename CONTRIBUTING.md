@@ -66,6 +66,29 @@ Os tokens ficam em Kotlin, e não em `res/values/dimens.xml`: no Compose eles s�
 e trocam junto com ele. O `scripts/check-ui-tokens.sh` confere a regra localmente e no CI; previews
 (`*Preview.kt`) e testes ficam de fora.
 
+## Cobertura de testes
+
+O Kover mede a cobertura dos testes unitários e o CI falha abaixo destes pisos:
+
+| Onde | Linhas | Ramos |
+|---|---:|---:|
+| **Todo módulo** (medido só com os testes dele) | **80%** | sem piso |
+| Projeto inteiro | 90% | sem piso |
+| `core/domain` (regras de negócio) | 95% | 70% |
+| `core/data` | 90% | sem piso |
+
+O mínimo de 80% vale por módulo e conta só os testes do próprio módulo: um componente do design system
+usado por uma tela precisa de teste no `core/designsystem`, não só no teste da tela. O módulo `app` fica fora,
+porque só liga as peças.
+
+Ficam fora da conta o código gerado ou só de ligação: Hilt, `BuildConfig`, `R`, módulos de DI, o módulo `app`,
+previews, rotas de navegação e DTOs (ver `build-logic/.../KoverConfiguration.kt`). Ramos de telas Compose não têm
+piso porque o compilador do Compose gera ramos internos que nenhum teste percorre.
+
+Módulo novo já nasce com o mínimo de 80% e entra no relatório geral com `kover(projects....)` no
+`build.gradle.kts` da raiz. Piso acima do mínimo: `minimumCoverage(lines = ..., branches = ...)` no
+`build.gradle.kts` do módulo.
+
 ## Antes de abrir o PR
 
 ```bash
@@ -73,7 +96,7 @@ scripts/check-ui-tokens.sh
 ```
 
 ```bash
-./gradlew ktlintCheck :app:lintDebug test
+./gradlew ktlintCheck :app:lintDebug test koverVerifyCoverage
 ```
 
 Se mexeu em `supabase/`:

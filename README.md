@@ -57,6 +57,12 @@ chave `service_role` no app.
 ./gradlew ktlintCheck :app:lintDebug test
 ```
 
+Cobertura de testes (Kover), com relatório em `build/reports/kover/htmlCoverage/index.html`:
+
+```bash
+./gradlew koverHtmlReportCoverage koverVerifyCoverage
+```
+
 Testes do banco (Node, sem Docker):
 
 ```bash
