@@ -188,6 +188,7 @@ class StoreScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("Ração Golden Adultos", substring = true, useUnmergedTree = true).assertExists()
+        // O nome do produto também está no catálogo; o texto inteiro do aviso só existe no snackbar.
+        composeRule.onNodeWithText("Ração Golden Adultos (15 kg) no carrinho").assertExists()
     }
 }
