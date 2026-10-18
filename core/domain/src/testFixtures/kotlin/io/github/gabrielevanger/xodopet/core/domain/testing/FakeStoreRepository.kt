@@ -11,7 +11,12 @@ class FakeStoreRepository(
 ) : StoreRepository {
     var failWith: Throwable? = null
 
+    /** Quantas vezes a loja foi buscada, para conferir que a tela não recarrega à toa. */
+    var catalogCalls = 0
+        private set
+
     override suspend fun store(storeId: String): StoreDetails? {
+        catalogCalls++
         failWith?.let {
             failWith = null
             throw it

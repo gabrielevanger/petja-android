@@ -41,21 +41,28 @@ class StoreScreenTest {
     )
 
     private fun show(
-        state: StoreUiState,
+        content: StoreContent,
         onBack: () -> Unit = {},
         onRetry: () -> Unit = {},
         onProductClick: (String) -> Unit = {},
     ) {
         composeRule.setContent {
             XodoTheme {
-                StoreScreen(state, onBack, onRetry, onProductClick, onProductDismiss = {})
+                StoreScreen(StoreUiState(content), onAction = { action ->
+                    when (action) {
+                        StoreAction.OnBackClick -> onBack()
+                        StoreAction.OnRetryClick -> onRetry()
+                        is StoreAction.OnProductClick -> onProductClick(action.productId)
+                        else -> Unit
+                    }
+                })
             }
         }
     }
 
     @Test
     fun showsHeaderSectionsAndPrices() {
-        show(StoreUiState.Loaded(header, sections))
+        show(StoreContent.Loaded(header, sections))
 
         composeRule.onNodeWithText("Petshop Lavrado").assertExists()
         composeRule.onNodeWithText("Entrega em cerca de 40 min · Pedido mínimo R$ 30,00").assertExists()
@@ -65,7 +72,7 @@ class StoreScreenTest {
 
     @Test
     fun categoryChipScrollsToItsSection() {
-        show(StoreUiState.Loaded(header, sections))
+        show(StoreContent.Loaded(header, sections))
 
         // O chip vem antes do título da seção na árvore; o título pode nem estar composto ainda.
         composeRule.onAllNodesWithText("Petiscos")[0].performClick()
@@ -75,7 +82,7 @@ class StoreScreenTest {
 
     @Test
     fun closedStoreExplainsThatOrdersAreNotPossible() {
-        show(StoreUiState.Loaded(header.copy(isOpen = false), sections))
+        show(StoreContent.Loaded(header.copy(isOpen = false), sections))
 
         composeRule.onNodeWithText("Fechada").assertExists()
         composeRule.onNodeWithText("A loja está fechada agora", substring = true).assertExists()
@@ -84,7 +91,7 @@ class StoreScreenTest {
     @Test
     fun tappingAProductOpensIt() {
         var opened: String? = null
-        show(StoreUiState.Loaded(header, sections), onProductClick = { opened = it })
+        show(StoreContent.Loaded(header, sections), onProductClick = { opened = it })
 
         composeRule.onNodeWithText("Ração Golden Adultos").performClick()
 
@@ -101,7 +108,7 @@ class StoreScreenTest {
             persistentListOf(PetSpecies.DOG),
             persistentListOf(VariantUi("1", "1 kg", "R$ 30,90", true), VariantUi("15", "15 kg", "R$ 219,90", false)),
         )
-        show(StoreUiState.Loaded(header, sections, selectedProduct = detail))
+        show(StoreContent.Loaded(header, sections, selectedProduct = detail))
 
         composeRule.onNodeWithText("Golden · Cães").assertExists()
         composeRule.onNodeWithText("1 kg").assertExists()
@@ -122,12 +129,8 @@ class StoreScreenTest {
         composeRule.setContent {
             XodoTheme {
                 StoreScreen(
-                    state = StoreUiState.Loaded(header, sections, selectedProduct = detail),
-                    onBack = {},
-                    onRetry = {},
-                    onProductClick = {},
-                    onProductDismiss = {},
-                    onAddToCart = { added = it },
+                    state = StoreUiState(StoreContent.Loaded(header, sections, selectedProduct = detail)),
+                    onAction = { if (it is StoreAction.OnAddToCart) added = it.variantId },
                 )
             }
         }
@@ -144,14 +147,12 @@ class StoreScreenTest {
         composeRule.setContent {
             XodoTheme {
                 StoreScreen(
-                    state = StoreUiState.Loaded(header, sections),
-                    onBack = {},
-                    onRetry = {},
-                    onProductClick = {},
-                    onProductDismiss = {},
-                    cartBar = CartBarUi("Petshop Lavrado", 2, "R$ 61,80"),
-                    cartState = StoreCartState(replacePrompt = ReplaceCartPrompt("Casa do Bicho", "1")),
-                    onConfirmReplaceCart = { confirmed++ },
+                    state = StoreUiState(
+                        content = StoreContent.Loaded(header, sections),
+                        cartBar = CartBarUi("Petshop Lavrado", 2, "R$ 61,80"),
+                        replacePrompt = ReplaceCartPrompt("Casa do Bicho", "1"),
+                    ),
+                    onAction = { if (it == StoreAction.OnConfirmReplaceCart) confirmed++ },
                 )
             }
         }
@@ -166,12 +167,27 @@ class StoreScreenTest {
     fun backAndRetry() {
         var back = 0
         var retries = 0
-        show(StoreUiState.Error, onBack = { back++ }, onRetry = { retries++ })
+        show(StoreContent.Error, onBack = { back++ }, onRetry = { retries++ })
 
         composeRule.onNodeWithContentDescription("Voltar").performClick()
         composeRule.onNodeWithText("Tentar de novo").performClick()
 
         assertEquals(1, back)
         assertEquals(1, retries)
+    }
+
+    @Test
+    fun cartMessageShowsInTheSnackbar() {
+        composeRule.setContent {
+            XodoTheme {
+                StoreScreen(
+                    state = StoreUiState(StoreContent.Loaded(header, sections)),
+                    onAction = {},
+                    message = StoreCartMessage.Added("Ração Golden Adultos", "15 kg"),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Ração Golden Adultos", substring = true, useUnmergedTree = true).assertExists()
     }
 }
