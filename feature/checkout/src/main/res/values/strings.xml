@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt">
+    <string name="checkout_title">Finalizar pedido</string>
+    <string name="checkout_loading">Preparando seu pedido</string>
+    <string name="checkout_empty">Seu carrinho está vazio.</string>
+    <string name="checkout_from_store">Pedido na %1$s</string>
+
+    <string name="checkout_address_title">Onde entregar</string>
+    <string name="checkout_address_line">%1$s, %2$s</string>
+    <string name="checkout_address_new">Usar outro endereço</string>
+    <string name="checkout_address_save">Usar este endereço</string>
+    <string name="checkout_address_point_note">Por enquanto, o ponto no mapa é o lugar escolhido na vitrine (%1$s).</string>
+    <string name="checkout_field_street">Rua</string>
+    <string name="checkout_field_number">Número</string>
+    <string name="checkout_field_complement">Complemento (opcional)</string>
+    <string name="checkout_field_neighborhood">Bairro</string>
+    <string name="checkout_field_reference">Ponto de referência (opcional)</string>
+    <string name="checkout_field_required">Preencha este campo.</string>
+
+    <string name="checkout_payment_title">Pagamento na entrega</string>
+    <string name="checkout_payment_cash">Dinheiro</string>
+    <string name="checkout_payment_pix">Pix na entrega</string>
+    <string name="checkout_payment_card">Cartão na maquininha</string>
+    <string name="checkout_change_for">Troco para quanto? (opcional)</string>
+    <string name="checkout_change_invalid">Escreva só o valor, como 100 ou 100,50.</string>
+
+    <string name="checkout_notes">Observação para a loja (opcional)</string>
+
+    <string name="checkout_summary_title">Resumo</string>
+    <string name="checkout_subtotal">Subtotal</string>
+    <string name="checkout_delivery">Entrega</string>
+    <string name="checkout_total">Total</string>
+    <string name="checkout_delivery_calculating">Calculando…</string>
+    <string name="checkout_delivery_free">Grátis</string>
+    <string name="checkout_delivery_choose_address">Escolha o endereço para ver a taxa.</string>
+    <string name="checkout_delivery_out_of_area">A loja não entrega nesse endereço.</string>
+    <string name="checkout_delivery_error">Não foi possível calcular a entrega agora.</string>
+    <string name="checkout_min_order">Faltam %1$s para o pedido mínimo de %2$s.</string>
+
+    <string name="checkout_place_order">Fazer pedido · %1$s</string>
+    <string name="checkout_place_order_disabled">Fazer pedido</string>
+
+    <string name="checkout_sign_in">Entrar</string>
+    <string name="checkout_error_not_signed_in">Entre na sua conta para fazer o pedido.</string>
+    <string name="checkout_error_store_closed">A loja fechou. O pedido não foi feito.</string>
+    <string name="checkout_error_out_of_area">A loja não entrega nesse endereço.</string>
+    <string name="checkout_error_item_unavailable">Algum item ficou indisponível. Volte ao carrinho e confira.</string>
+    <string name="checkout_error_insufficient_stock">A loja não tem a quantidade pedida de algum item. Volte ao carrinho e confira.</string>
+    <string name="checkout_error_below_min_order">O pedido está abaixo do mínimo da loja.</string>
+    <string name="checkout_error_price_changed">Os preços ou a taxa mudaram. Confira o novo total e peça de novo.</string>
+    <string name="checkout_error_change_too_low">O troco precisa ser maior que o total.</string>
+    <string name="checkout_error_empty_cart">Seu carrinho está vazio.</string>
+    <string name="checkout_error_network">Sem conexão. Confira a internet e tente de novo.</string>
+    <string name="checkout_error_unknown">Algo deu errado e o pedido não foi feito. Tente de novo.</string>
+
+    <string name="placed_title">Pedido enviado</string>
+    <string name="placed_number">Pedido #%1$d</string>
+    <string name="placed_text">A %1$s recebeu seu pedido de %2$s. O pagamento é na entrega.</string>
+    <string name="placed_tracking_soon">Acompanhar o pedido pelo app chega na próxima versão.</string>
+    <string name="placed_back_to_storefront">Voltar para a vitrine</string>
+</resources>
