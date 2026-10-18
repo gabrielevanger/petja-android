@@ -15,7 +15,6 @@ import io.github.gabrielevanger.xodopet.core.domain.testing.anOrderSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -161,16 +160,12 @@ class OrdersViewModelsTest {
     fun `reorder opens the cart and tells what changed`() = runTest(dispatcher) {
         val viewModel = details()
         advanceUntilIdle()
-        var cartOpened = false
-        backgroundScope.launch {
-            viewModel.openCart.first()
-            cartOpened = true
-        }
 
         viewModel.reorder()
         advanceUntilIdle()
 
-        assertTrue(cartOpened)
+        // O evento fica no buffer do canal até a tela ler.
+        viewModel.openCart.first()
         assertEquals(
             OrderMessage.ReorderSomeChanged,
             viewModel.loaded().message,

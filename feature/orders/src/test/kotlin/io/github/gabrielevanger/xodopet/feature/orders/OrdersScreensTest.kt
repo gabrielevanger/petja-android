@@ -36,7 +36,7 @@ class OrdersScreensTest {
                     OrdersUiState.Loaded(
                         persistentListOf(
                             anOrderSummary(),
-                            anOrderSummary(id = "pedido-2", status = OrderStatus.Canceled),
+                            anOrderSummary(id = "pedido-2", status = OrderStatus.Canceled).copy(itemCount = 1),
                         ),
                     ),
                     onBack = {},
@@ -50,6 +50,7 @@ class OrdersScreensTest {
         composeRule.onNodeWithText("Aguardando a loja").assertExists()
         composeRule.onNodeWithText("Cancelado").assertExists()
         composeRule.onNodeWithText("2 itens", substring = true).assertExists()
+        composeRule.onNodeWithText("1 item", substring = true).assertExists()
         composeRule.onNodeWithText("Aguardando a loja").performClick()
         assertEquals("pedido-1", opened)
     }
