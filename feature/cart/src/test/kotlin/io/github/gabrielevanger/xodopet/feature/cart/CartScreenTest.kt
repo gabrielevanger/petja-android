@@ -45,8 +45,8 @@ class CartScreenTest {
     fun showsSummaryAndMinimumOrder() {
         show(loaded)
 
-        composeRule.onNodeWithText("Pedido na Petshop Lavrado").assertExists()
-        composeRule.onNodeWithText("Entregar em Centro").assertExists()
+        composeRule.onNodeWithText("Petshop Lavrado").assertExists()
+        composeRule.onNodeWithText("1 item no carrinho · Entregar em Centro").assertExists()
         composeRule.onNodeWithText("R$ 5,00").assertExists()
         composeRule.onNodeWithText("R$ 35,90").assertExists()
         composeRule.onNodeWithText("Faltam R$ 19,10 para o pedido mínimo de R$ 50,00.").assertExists()
@@ -107,7 +107,7 @@ class CartScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("Finalizar pedido").performClick()
+        composeRule.onNodeWithText("Continuar").performClick()
         assertEquals(1, checkout)
     }
 }
