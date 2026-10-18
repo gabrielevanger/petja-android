@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="store_back">Voltar</string>
+    <string name="store_loading">Carregando a loja</string>
+    <string name="store_error">Não foi possível carregar a loja. Confira a internet e tente de novo.</string>
+    <string name="store_retry">Tentar de novo</string>
+    <string name="store_not_found">Esta loja não está mais disponível.</string>
+
+    <string name="store_open">Aberta</string>
+    <string name="store_closed">Fechada</string>
+    <string name="store_closed_notice">A loja está fechada agora. Dá para ver os produtos, mas não para fazer pedido.</string>
+    <string name="store_eta">Entrega em cerca de %1$d min</string>
+    <string name="store_min_order">Pedido mínimo %1$s</string>
+    <string name="store_empty_catalog">Esta loja ainda não cadastrou produtos.</string>
+
+    <string name="store_price_from">a partir de %1$s</string>
+    <string name="store_unavailable">Indisponível</string>
+    <string name="store_options_title">Opções</string>
+    <string name="store_cart_soon">Adicionar ao carrinho chega na próxima versão.</string>
+
+    <string name="species_dog">Cães</string>
+    <string name="species_cat">Gatos</string>
+    <string name="species_bird">Aves</string>
+    <string name="species_fish">Peixes</string>
+    <string name="species_rodent">Roedores</string>
+    <string name="species_reptile">Répteis</string>
+    <string name="species_other">Outros pets</string>
+</resources>

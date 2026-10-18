@@ -39,20 +39,30 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 
 @Composable
-fun StorefrontRoute(viewModel: StorefrontViewModel = hiltViewModel()) {
+fun StorefrontRoute(onStoreClick: (storeId: String) -> Unit, viewModel: StorefrontViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    StorefrontScreen(state = state, onSelectPlace = viewModel::selectPlace, onRetry = viewModel::retry)
+    StorefrontScreen(
+        state = state,
+        onSelectPlace = viewModel::selectPlace,
+        onRetry = viewModel::retry,
+        onStoreClick = onStoreClick,
+    )
 }
 
 @Composable
-fun StorefrontScreen(state: StorefrontUiState, onSelectPlace: (SamplePlace) -> Unit, onRetry: () -> Unit) {
+fun StorefrontScreen(
+    state: StorefrontUiState,
+    onSelectPlace: (SamplePlace) -> Unit,
+    onRetry: () -> Unit,
+    onStoreClick: (storeId: String) -> Unit,
+) {
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.safeDrawingPadding()) {
             PlacePicker(state, onSelectPlace)
             when (val content = state.content) {
                 StorefrontContent.Loading -> Loading()
                 StorefrontContent.Error -> Error(onRetry)
-                is StorefrontContent.Loaded -> StoreList(content)
+                is StorefrontContent.Loaded -> StoreList(content, onStoreClick)
             }
         }
     }
@@ -118,7 +128,7 @@ private fun Error(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun StoreList(content: StorefrontContent.Loaded) {
+private fun StoreList(content: StorefrontContent.Loaded, onStoreClick: (storeId: String) -> Unit) {
     LazyColumn(
         contentPadding = PaddingValues(XodoSpacing.md),
         verticalArrangement = Arrangement.spacedBy(XodoSpacing.sm),
@@ -127,7 +137,9 @@ private fun StoreList(content: StorefrontContent.Loaded) {
             item(key = "no-partner") { SectionTitle(stringResource(R.string.storefront_no_partner_title)) }
         } else {
             item(key = "partners-title") { SectionTitle(stringResource(R.string.storefront_partners_title)) }
-            items(content.partners, key = { it.id }, contentType = { "partner" }) { StoreCard(it) }
+            items(content.partners, key = { it.id }, contentType = { "partner" }) { store ->
+                StoreCard(store, onClick = { onStoreClick(store.id) })
+            }
         }
 
         val showNonPartners = content.noPartnerDelivers || content.nonPartners.isNotEmpty()
@@ -170,8 +182,9 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
-private fun StoreCard(store: StoreCardUi) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun StoreCard(store: StoreCardUi, onClick: () -> Unit) {
+    // Loja fechada também abre: o cliente pode ver o catálogo, só não pode pedir agora.
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(XodoSpacing.md)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -276,6 +289,7 @@ private fun StorefrontPreview() {
             ),
             onSelectPlace = {},
             onRetry = {},
+            onStoreClick = {},
         )
     }
 }
@@ -304,6 +318,7 @@ private fun NoPartnerPreview() {
                 ),
                 onSelectPlace = {},
                 onRetry = {},
+                onStoreClick = {},
             )
         }
     }
