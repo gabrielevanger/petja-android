@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gabrielevanger.xodopet.core.designsystem.component.BadgeTone
 import io.github.gabrielevanger.xodopet.core.designsystem.component.ErrorState
@@ -36,6 +38,7 @@ import io.github.gabrielevanger.xodopet.core.designsystem.component.SectionTitle
 import io.github.gabrielevanger.xodopet.core.designsystem.component.StatusBadge
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 import io.github.gabrielevanger.xodopet.core.ui.CartBar
+import io.github.gabrielevanger.xodopet.core.ui.CollectEvents
 import io.github.gabrielevanger.xodopet.core.ui.R as CoreUiR
 import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
 
@@ -47,48 +50,43 @@ fun StorefrontRoute(
     viewModel: StorefrontViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    StorefrontScreen(
-        state = state,
-        onSelectPlace = viewModel::selectPlace,
-        onRetry = viewModel::retry,
-        onStoreClick = onStoreClick,
-        onCartClick = onCartClick,
-        onAccountClick = onAccountClick,
-    )
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onAction(StorefrontAction.OnStart) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onAction(StorefrontAction.OnStop) }
+    CollectEvents(viewModel.events) { event ->
+        when (event) {
+            is StorefrontEvent.OpenStore -> onStoreClick(event.storeId)
+            StorefrontEvent.OpenCart -> onCartClick()
+            StorefrontEvent.OpenAccount -> onAccountClick()
+        }
+    }
+    StorefrontScreen(state = state, onAction = viewModel::onAction)
 }
 
 @Composable
-fun StorefrontScreen(
-    state: StorefrontUiState,
-    onSelectPlace: (SamplePlace) -> Unit,
-    onRetry: () -> Unit,
-    onStoreClick: (storeId: String) -> Unit,
-    onCartClick: () -> Unit = {},
-    onAccountClick: () -> Unit = {},
-) {
+fun StorefrontScreen(state: StorefrontUiState, onAction: (StorefrontAction) -> Unit) {
     Scaffold(
         containerColor = XodoTheme.colors.background,
-        bottomBar = { state.cartBar?.let { CartBar(it, onClick = onCartClick) } },
+        bottomBar = { state.cartBar?.let { CartBar(it, onClick = { onAction(StorefrontAction.OnCartClick) }) } },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
-            PlacePicker(state, onSelectPlace, onAccountClick)
+            PlacePicker(state, onAction)
             when (val content = state.content) {
                 StorefrontContent.Loading -> LoadingState(stringResource(R.string.storefront_loading))
 
                 StorefrontContent.Error -> ErrorState(
                     message = stringResource(R.string.storefront_error),
                     actionLabel = stringResource(CoreUiR.string.common_retry),
-                    onAction = onRetry,
+                    onAction = { onAction(StorefrontAction.OnRetryClick) },
                 )
 
-                is StorefrontContent.Loaded -> StoreList(content, onStoreClick)
+                is StorefrontContent.Loaded -> StoreList(content) { onAction(StorefrontAction.OnStoreClick(it)) }
             }
         }
     }
 }
 
 @Composable
-private fun PlacePicker(state: StorefrontUiState, onSelectPlace: (SamplePlace) -> Unit, onAccountClick: () -> Unit) {
+private fun PlacePicker(state: StorefrontUiState, onAction: (StorefrontAction) -> Unit) {
     val spacing = XodoTheme.spacing
     Column(modifier = Modifier.padding(top = spacing.xs)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = spacing.m)) {
@@ -98,7 +96,7 @@ private fun PlacePicker(state: StorefrontUiState, onSelectPlace: (SamplePlace) -
                 color = XodoTheme.colors.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(onClick = onAccountClick) {
+            IconButton(onClick = { onAction(StorefrontAction.OnAccountClick) }) {
                 Icon(Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.storefront_account))
             }
         }
@@ -109,7 +107,7 @@ private fun PlacePicker(state: StorefrontUiState, onSelectPlace: (SamplePlace) -
             items(state.places, key = { it.name }) { place ->
                 FilterChip(
                     selected = place == state.selectedPlace,
-                    onClick = { onSelectPlace(place) },
+                    onClick = { onAction(StorefrontAction.OnPlaceClick(place)) },
                     label = { Text(place.name) },
                 )
             }

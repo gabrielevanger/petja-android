@@ -24,9 +24,7 @@ private fun StorefrontPreview() {
                     ),
                 ),
             ),
-            onSelectPlace = {},
-            onRetry = {},
-            onStoreClick = {},
+            onAction = {},
         )
     }
 }
@@ -53,9 +51,7 @@ private fun NoPartnerPreview() {
                     ),
                 ),
             ),
-            onSelectPlace = {},
-            onRetry = {},
-            onStoreClick = {},
+            onAction = {},
         )
     }
 }
