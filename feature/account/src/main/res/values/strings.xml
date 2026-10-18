@@ -4,6 +4,7 @@
     <string name="account_signed_out_text">Entre para fazer pedidos e acompanhar as entregas. Para ver as lojas, não precisa de conta.</string>
     <string name="account_sign_in">Entrar</string>
     <string name="account_sign_up">Criar conta</string>
+    <string name="account_orders">Meus pedidos</string>
     <string name="account_sign_out">Sair da conta</string>
     <string name="account_hello">Olá, %1$s</string>
     <string name="account_hello_no_name">Olá!</string>

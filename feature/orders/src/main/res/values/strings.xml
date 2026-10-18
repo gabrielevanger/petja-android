@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt">
+    <string name="orders_title">Meus pedidos</string>
+    <string name="orders_loading">Carregando seus pedidos</string>
+    <string name="orders_empty">Você ainda não fez nenhum pedido.</string>
+    <string name="orders_error">Não foi possível carregar os pedidos. Confira a internet e tente de novo.</string>
+    <string name="order_sign_in">Entrar</string>
+    <string name="orders_not_signed_in">Entre na sua conta para ver os pedidos.</string>
+    <string name="orders_number_store">Pedido #%1$d · %2$s</string>
+    <plurals name="orders_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="many">%1$d de itens</item>
+        <item quantity="other">%1$d itens</item>
+    </plurals>
+
+    <string name="order_title">Pedido #%1$d</string>
+    <string name="order_loading">Carregando o pedido</string>
+    <string name="order_not_found">Pedido não encontrado.</string>
+    <string name="order_error">Não foi possível carregar o pedido. Confira a internet e tente de novo.</string>
+    <string name="order_from_store">Na %1$s, feito em %2$s</string>
+    <string name="order_live">Atualiza sozinho quando a loja mudar o status.</string>
+    <string name="order_timeline_title">Andamento</string>
+    <string name="order_items_title">Itens</string>
+    <string name="order_item_line">%1$d× %2$s</string>
+    <string name="order_values_title">Valores</string>
+    <string name="order_subtotal">Subtotal</string>
+    <string name="order_delivery">Entrega</string>
+    <string name="order_delivery_free">Grátis</string>
+    <string name="order_total">Total</string>
+    <string name="order_payment_title">Pagamento na entrega</string>
+    <string name="order_payment_cash">Dinheiro</string>
+    <string name="order_payment_cash_change">Dinheiro, troco para %1$s</string>
+    <string name="order_payment_pix">Pix na entrega</string>
+    <string name="order_payment_card">Cartão na maquininha</string>
+    <string name="order_address_title">Entregar em</string>
+    <string name="order_address_line">%1$s, %2$s</string>
+    <string name="order_notes_title">Observação</string>
+    <string name="order_courier">Entregador: %1$s</string>
+
+    <string name="order_cancel">Cancelar pedido</string>
+    <string name="order_cancel_title">Cancelar o pedido?</string>
+    <string name="order_cancel_text">A loja ainda não aceitou. Se cancelar, o pedido não será entregue.</string>
+    <string name="order_cancel_confirm">Cancelar pedido</string>
+    <string name="order_cancel_dismiss">Manter pedido</string>
+    <string name="order_cannot_cancel">A loja já aceitou o pedido. Para cancelar, fale com a loja.</string>
+    <string name="order_whatsapp">Falar com a loja</string>
+    <string name="order_reorder">Pedir de novo</string>
+    <string name="order_reorder_some_changed">Alguns itens mudaram ou estão indisponíveis. Confira o carrinho.</string>
+    <string name="order_reorder_nothing">Nenhum item deste pedido está disponível agora.</string>
+    <string name="order_action_failed">Não deu certo agora. Confira a internet e tente de novo.</string>
+
+    <string name="status_pending">Aguardando a loja</string>
+    <string name="status_accepted">Aceito pela loja</string>
+    <string name="status_preparing">Em separação</string>
+    <string name="status_out_for_delivery">Saiu para entrega</string>
+    <string name="status_delivered">Entregue</string>
+    <string name="status_not_delivered">Não entregue</string>
+    <string name="status_rejected">Recusado pela loja</string>
+    <string name="status_canceled">Cancelado</string>
+</resources>

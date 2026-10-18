@@ -336,7 +336,13 @@ internal fun CheckoutError.message(): String = stringResource(
 )
 
 @Composable
-fun OrderPlacedScreen(number: Long, storeName: String, total: String, onBackToStorefront: () -> Unit) {
+fun OrderPlacedScreen(
+    number: Long,
+    storeName: String,
+    total: String,
+    onBackToStorefront: () -> Unit,
+    onTrackOrder: () -> Unit = {},
+) {
     Scaffold(containerColor = XodoTheme.colors.background) { padding ->
         Column(
             verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s, Alignment.CenterVertically),
@@ -346,12 +352,10 @@ fun OrderPlacedScreen(number: Long, storeName: String, total: String, onBackToSt
             Text(text = stringResource(R.string.placed_title), style = XodoTheme.typography.screenTitle)
             Text(text = stringResource(R.string.placed_number, number), style = XodoTheme.typography.sectionTitle)
             Text(text = stringResource(R.string.placed_text, storeName, total), style = XodoTheme.typography.body)
-            Text(
-                text = stringResource(R.string.placed_tracking_soon),
-                style = XodoTheme.typography.caption,
-                color = XodoTheme.colors.onSurfaceVariant,
-            )
-            Button(onClick = onBackToStorefront, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = onTrackOrder, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.placed_track_order))
+            }
+            OutlinedButton(onClick = onBackToStorefront, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.placed_back_to_storefront))
             }
         }

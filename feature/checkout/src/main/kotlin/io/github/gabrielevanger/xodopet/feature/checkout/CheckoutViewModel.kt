@@ -186,7 +186,7 @@ class CheckoutViewModel @Inject constructor(
                 updateReady {
                     it.copy(
                         submitting = false,
-                        placed = PlacedOrderUi(order.number, current.storeName, order.total.formatBrl()),
+                        placed = PlacedOrderUi(order.id, order.number, current.storeName, order.total.formatBrl()),
                     )
                 }
             } catch (e: CheckoutException) {
