@@ -50,3 +50,18 @@ fun formatDistance(meters: Int): String = when {
 
     else -> "${(meters + METERS_PER_KM / 2) / METERS_PER_KM} km"
 }
+
+/** Casas de centavos aceitas ao digitar um valor ("100,5" vale R$ 100,50). */
+private val TYPED_MONEY = Regex("""^(\d{1,7})(?:[.,](\d{1,2}))?$""")
+
+/**
+ * Valor digitado pelo cliente, como o troco: "100", "100,50", "100.5" ou "R$ 100".
+ * null quando não dá para entender; separador de milhar não é aceito, para "1.000" não virar R$ 1,00.
+ */
+fun parseBrl(text: String): Money? {
+    val clean = text.trim().removePrefix("R$").trim()
+    val match = TYPED_MONEY.matchEntire(clean) ?: return null
+    val reais = match.groupValues[1].toLong()
+    val centavos = match.groupValues[2].padEnd(CENT_DIGITS, '0').toLong()
+    return Money(reais * CENTS_PER_REAL + centavos)
+}
