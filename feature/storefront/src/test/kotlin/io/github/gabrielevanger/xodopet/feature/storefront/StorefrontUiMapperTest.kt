@@ -33,6 +33,7 @@ class StorefrontUiMapperTest {
 
         assertEquals("https://wa.me/5595900001001", card.whatsappLink)
         assertNull(card.phoneLink)
-        assertEquals("Rua Fictícia A, 10 · Cidade Satélite", card.address)
+        assertEquals("Rua Fictícia A, 10", card.street)
+        assertEquals("Cidade Satélite", card.neighborhood)
     }
 }

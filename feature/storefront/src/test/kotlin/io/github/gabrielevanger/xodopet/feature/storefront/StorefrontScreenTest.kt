@@ -65,7 +65,15 @@ class StorefrontScreenTest {
         show(
             StorefrontContent.Loaded(
                 nonPartners = persistentListOf(
-                    ExternalStoreCardUi("e1", "Agropet Satélite", null, "310 m", "https://wa.me/1", "tel:1"),
+                    ExternalStoreCardUi(
+                        "e1",
+                        "Agropet Satélite",
+                        null,
+                        "Cidade Satélite",
+                        "310 m",
+                        "https://wa.me/1",
+                        "tel:1",
+                    ),
                 ),
             ),
         )
@@ -73,6 +81,7 @@ class StorefrontScreenTest {
         composeRule.onNodeWithText("Nenhuma loja parceira entrega aqui ainda").assertExists()
         composeRule.onNodeWithText("Outros petshops perto de você").assertExists()
         composeRule.onNodeWithText("Agropet Satélite").assertExists()
+        composeRule.onNodeWithText("Cidade Satélite · 310 m").assertExists()
         composeRule.onNodeWithText("WhatsApp").assertExists()
         composeRule.onNodeWithText("Ligar").assertExists()
     }
