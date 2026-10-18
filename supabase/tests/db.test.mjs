@@ -198,6 +198,19 @@ const st = await q('select id, status, status_reason from orders where id in ($1
 check('expire cancels only old pending', expired === 1 && st.find(r => r.id === o3.id).status === 'canceled' && st.find(r => r.id === o4.id).status === 'pending')
 await expectError('expire not callable by users', U.ana, 'select private.expire_pending_orders(0)', [], 'permission denied')
 
+// --- Addresses API (checkout)
+const added = await as(U.bia, `select * from add_address('Rua Nova', '12', 'Caçari', 2.833, -60.676, null, 'Portão azul', 'Casa')`)
+check('add_address returns the point', added.length === 1 && Math.abs(added[0].lat - 2.833) < 1e-9 && Math.abs(added[0].lng + 60.676) < 1e-9 && added[0].reference === 'Portão azul')
+const mine = await as(U.bia, 'select * from my_addresses()')
+check('my_addresses lists only own addresses', mine.length === 1 && mine[0].id === added[0].id)
+check('my_addresses of another user is empty for them', (await as(U.dono, 'select * from my_addresses()')).length === 0)
+const [second] = await as(U.bia, `select * from add_address('Rua Dois', '5', 'Centro', 2.82, -60.672)`)
+const listed = await as(U.bia, 'select id, is_default from my_addresses()')
+check('new default address comes first and is the only default', listed[0].id === second.id && listed.filter(a => a.is_default).length === 1)
+await expectError('anon cannot add address', null, `select * from add_address('x','1','y',2.82,-60.67)`, [], 'permission denied')
+const [orderFromNew] = await as(U.bia, PO, [S1, second.id, items, 'cash', null, null, null])
+check('order with an address from add_address', orderFromNew.status === 'pending' && orderFromNew.street === 'Rua Dois')
+
 // --- Catalog management
 const [np] = await as(U.dono, `insert into products (store_id, category_id, name, species) values ($1, 1, 'Ração Teste', '{dog}') returning id`, [S1])
 check('owner creates product', !!np)
