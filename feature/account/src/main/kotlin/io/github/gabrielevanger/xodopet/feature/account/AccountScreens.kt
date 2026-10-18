@@ -1,9 +1,11 @@
 package io.github.gabrielevanger.xodopet.feature.account
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -13,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,16 +23,27 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.gabrielevanger.xodopet.core.designsystem.R as DesignR
+import io.github.gabrielevanger.xodopet.core.designsystem.component.Avatar
 import io.github.gabrielevanger.xodopet.core.designsystem.component.FormField
 import io.github.gabrielevanger.xodopet.core.designsystem.component.FormFieldType
 import io.github.gabrielevanger.xodopet.core.designsystem.component.LoadingState
 import io.github.gabrielevanger.xodopet.core.designsystem.component.Notice
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButton
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButtonStyle
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoCard
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.highlight
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.highlightContainer
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.onHighlight
 import io.github.gabrielevanger.xodopet.core.domain.account.AccountState
 import io.github.gabrielevanger.xodopet.core.domain.account.SignUpResult
 import io.github.gabrielevanger.xodopet.core.ui.BackTopBar
@@ -69,39 +83,106 @@ fun AccountScreen(
     onOrders: () -> Unit = {},
 ) {
     AccountScaffold(title = stringResource(R.string.account_title), onBack = onBack) {
-        notice?.let { Notice(stringResource(it.messageRes())) }
+        notice?.let { ConfirmationBanner(stringResource(it.messageRes())) }
         when (state) {
             AccountState.Loading -> LoadingState(stringResource(R.string.account_loading))
 
             AccountState.SignedOut -> {
                 Text(text = stringResource(R.string.account_signed_out_text), style = XodoTheme.typography.body)
-                Button(onClick = onSignIn, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.account_sign_in))
-                }
-                OutlinedButton(onClick = onSignUp, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.account_sign_up))
-                }
+                XodoButton(
+                    text = stringResource(R.string.account_sign_in),
+                    onClick = onSignIn,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                XodoButton(
+                    text = stringResource(R.string.account_sign_up),
+                    onClick = onSignUp,
+                    style = XodoButtonStyle.Outlined,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             is AccountState.SignedIn -> {
-                Text(
-                    text = state.account.fullName?.let { stringResource(R.string.account_hello, it) }
+                ProfileCard(
+                    name = state.account.fullName?.let { stringResource(R.string.account_hello, it) }
                         ?: stringResource(R.string.account_hello_no_name),
-                    style = XodoTheme.typography.sectionTitle,
+                    email = state.account.email,
                 )
-                Text(
-                    text = state.account.email,
-                    style = XodoTheme.typography.body,
-                    color = XodoTheme.colors.onSurfaceVariant,
-                )
-                Button(onClick = onOrders, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.account_orders))
+                IconAction(DesignR.drawable.ic_receipt_text) {
+                    XodoButton(
+                        text = stringResource(R.string.account_orders),
+                        onClick = onOrders,
+                        style = XodoButtonStyle.Tonal,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
-                OutlinedButton(onClick = onSignOut, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.account_sign_out))
+                IconAction(DesignR.drawable.ic_log_out) {
+                    XodoButton(
+                        text = stringResource(R.string.account_sign_out),
+                        onClick = onSignOut,
+                        style = XodoButtonStyle.Outlined,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }
+    }
+}
+
+/** Aviso positivo no topo da conta, como "e-mail confirmado". */
+@Composable
+private fun ConfirmationBanner(text: String) {
+    XodoCard(color = XodoTheme.colors.highlightContainer) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
+        ) {
+            Icon(
+                painter = painterResource(DesignR.drawable.ic_badge_check),
+                contentDescription = null,
+                tint = XodoTheme.colors.highlight,
+                modifier = Modifier.size(XodoTheme.sizes.icon),
+            )
+            Text(text = text, style = XodoTheme.typography.body, color = XodoTheme.colors.onSurfaceVariant)
+        }
+    }
+}
+
+/** Cartão verde do perfil: avatar, saudação e e-mail. */
+@Composable
+private fun ProfileCard(name: String, email: String) {
+    XodoCard(color = XodoTheme.colors.highlight, shape = XodoTheme.shapes.panel, contentPadding = XodoTheme.spacing.l) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Avatar()
+            Text(
+                text = name,
+                style = XodoTheme.typography.headline,
+                color = XodoTheme.colors.onHighlight,
+                textAlign = TextAlign.Center,
+            )
+            Text(text = email, style = XodoTheme.typography.body, color = XodoTheme.colors.onHighlight)
+        }
+    }
+}
+
+/** Botão com um ícone de traço à esquerda, como "Meus pedidos" e "Sair da conta" no layout. */
+@Composable
+private fun IconAction(@DrawableRes icon: Int, button: @Composable () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = XodoTheme.colors.highlight,
+            modifier = Modifier.size(XodoTheme.sizes.icon),
+        )
+        Column(modifier = Modifier.weight(1f)) { button() }
     }
 }
 
@@ -251,13 +332,13 @@ fun ResetPasswordScreen(
 private fun AccountScaffold(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Scaffold(containerColor = XodoTheme.colors.background, topBar = { BackTopBar(title, onBack) }) { padding ->
         Column(
-            verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
+            verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.m),
             modifier = Modifier
                 .padding(padding)
                 .consumeWindowInsets(padding)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(XodoTheme.spacing.m),
+                .padding(horizontal = XodoTheme.spacing.l, vertical = XodoTheme.spacing.m),
             content = content,
         )
     }

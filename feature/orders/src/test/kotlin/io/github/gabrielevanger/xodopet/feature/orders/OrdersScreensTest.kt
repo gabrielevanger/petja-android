@@ -88,13 +88,14 @@ class OrdersScreensTest {
 
         composeRule.onNodeWithText("Pedido #1").assertExists()
         composeRule.onNodeWithText("Atualiza sozinho", substring = true).assertExists()
-        composeRule.onNodeWithText("Cancelar pedido").performClick()
-        composeRule.onNodeWithText("Pedir de novo").performClick()
-        composeRule.onNodeWithText("Falar com a loja").assertExists()
-        composeRule.onNodeWithText("1× Ração Golden").performScrollTo().assertExists()
-        composeRule.onNodeWithText("Dinheiro, troco para R$ 100,00").performScrollTo().assertExists()
-        composeRule.onNodeWithText("Rua Cerro Corá, 78").performScrollTo().assertExists()
-        composeRule.onNodeWithText("Tocar a campainha").performScrollTo().assertExists()
+        // As ações ficam abaixo do cartão de status: rola até cada uma antes do toque.
+        composeRule.onNodeWithText("Pedir de novo").performScrollTo().performClick()
+        composeRule.onNodeWithText("Falar com a loja").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Cancelar pedido").performScrollTo().performClick()
+        composeRule.onNodeWithText("1× Ração Golden", substring = true).performScrollTo().assertExists()
+        composeRule.onNodeWithText("Dinheiro · troco para R$ 100,00").performScrollTo().assertExists()
+        composeRule.onNodeWithText("Rua Cerro Corá, 78", substring = true).performScrollTo().assertExists()
+        composeRule.onNodeWithText("Observação: Tocar a campainha").performScrollTo().assertExists()
         assertEquals(1, cancel)
         assertEquals(1, reorder)
     }

@@ -1,21 +1,23 @@
 package io.github.gabrielevanger.xodopet.feature.orders
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -28,22 +30,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.gabrielevanger.xodopet.core.designsystem.R as DesignR
 import io.github.gabrielevanger.xodopet.core.designsystem.component.ErrorState
+import io.github.gabrielevanger.xodopet.core.designsystem.component.IconTile
 import io.github.gabrielevanger.xodopet.core.designsystem.component.LoadingState
 import io.github.gabrielevanger.xodopet.core.designsystem.component.MessageState
 import io.github.gabrielevanger.xodopet.core.designsystem.component.Notice
 import io.github.gabrielevanger.xodopet.core.designsystem.component.SectionTitle
 import io.github.gabrielevanger.xodopet.core.designsystem.component.StatusBadge
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButton
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButtonStyle
+import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoCard
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.highlight
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.highlightContainer
+import io.github.gabrielevanger.xodopet.core.designsystem.theme.onHighlight
 import io.github.gabrielevanger.xodopet.core.domain.checkout.PaymentChoice
 import io.github.gabrielevanger.xodopet.core.domain.model.Money
 import io.github.gabrielevanger.xodopet.core.domain.model.OrderDetails
+import io.github.gabrielevanger.xodopet.core.domain.model.OrderStatus
 import io.github.gabrielevanger.xodopet.core.domain.model.OrderSummary
 import io.github.gabrielevanger.xodopet.core.ui.BackTopBar
 import io.github.gabrielevanger.xodopet.core.ui.R as CoreUiR
@@ -101,46 +113,93 @@ fun OrdersScreen(
             is OrdersUiState.Loaded -> if (state.orders.isEmpty()) {
                 MessageState(stringResource(R.string.orders_empty), modifier)
             } else {
-                LazyColumn(
-                    modifier = modifier,
-                    contentPadding = PaddingValues(XodoTheme.spacing.m),
-                    verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.xs),
-                ) {
-                    items(state.orders, key = {
-                        it.id
-                    }) { order -> OrderCard(order, onClick = { onOpenOrder(order.id) }) }
-                }
+                OrdersList(state, onOpenOrder, modifier)
             }
+        }
+    }
+}
+
+/** Pedidos em andamento em destaque no topo; os encerrados embaixo, em "Anteriores". */
+@Composable
+private fun OrdersList(state: OrdersUiState.Loaded, onOpenOrder: (String) -> Unit, modifier: Modifier) {
+    val spacing = XodoTheme.spacing
+    val (active, past) = state.orders.partition { !it.status.isFinal }
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(horizontal = spacing.l, vertical = spacing.m),
+        verticalArrangement = Arrangement.spacedBy(spacing.s),
+    ) {
+        item(key = "headline") {
+            Text(
+                text = stringResource(R.string.orders_headline),
+                style = XodoTheme.typography.headline,
+                modifier = Modifier.padding(bottom = spacing.s),
+            )
+        }
+        if (active.isNotEmpty()) {
+            item(key = "active") { SectionTitle(stringResource(R.string.orders_active_title)) }
+            items(active, key = { it.id }) { order -> OrderCard(order, onClick = { onOpenOrder(order.id) }) }
+        }
+        if (past.isNotEmpty()) {
+            item(key = "past") {
+                SectionTitle(
+                    stringResource(R.string.orders_past_title),
+                    modifier = Modifier.padding(top = if (active.isEmpty()) spacing.none else spacing.s),
+                )
+            }
+            items(past, key = { it.id }) { order -> OrderCard(order, onClick = { onOpenOrder(order.id) }) }
         }
     }
 }
 
 @Composable
 private fun OrderCard(order: OrderSummary, onClick: () -> Unit) {
-    Card(onClick = onClick, shape = XodoTheme.shapes.card, modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(XodoTheme.spacing.m),
-            verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.xxs),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.orders_number_store, order.number, order.storeName),
-                    style = XodoTheme.typography.cardTitle,
-                    modifier = Modifier.weight(1f),
-                )
-                StatusBadge(order.status.label(), order.status.tone)
-            }
-            Text(
-                text = dotSeparated(
-                    formatDateTime(order.createdAt),
-                    pluralStringResource(R.plurals.orders_items, order.itemCount, order.itemCount),
-                    order.total.formatBrl(),
-                ),
-                style = XodoTheme.typography.caption,
-                color = XodoTheme.colors.onSurfaceVariant,
+    val active = !order.status.isFinal
+    XodoCard(
+        onClick = onClick,
+        shape = XodoTheme.shapes.panel,
+        color = if (active) XodoTheme.colors.highlightContainer else XodoTheme.colors.surfaceContainerLowest,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = XodoTheme.spacing.s)) {
+            OrderStatusTile(order.status, modifier = Modifier.weight(1f, fill = false))
+            Spacer(Modifier.weight(1f))
+            Icon(
+                painter = painterResource(DesignR.drawable.ic_chevron_right),
+                contentDescription = null,
+                tint = XodoTheme.colors.onSurfaceVariant,
             )
         }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.orders_number_store, order.number, order.storeName),
+                style = XodoTheme.typography.cardTitle,
+                modifier = Modifier.weight(1f),
+            )
+            StatusBadge(order.status.label(), order.status.tone)
+        }
+        Text(
+            text = dotSeparated(
+                formatDateTime(order.createdAt),
+                pluralStringResource(R.plurals.orders_items, order.itemCount, order.itemCount),
+                order.total.formatBrl(),
+            ),
+            style = XodoTheme.typography.caption,
+            color = XodoTheme.colors.onSurfaceVariant,
+            modifier = Modifier.padding(top = XodoTheme.spacing.xxs),
+        )
     }
+}
+
+/** Ícone da situação: em andamento em verde forte; encerrados em tom neutro. */
+@Composable
+private fun OrderStatusTile(status: OrderStatus, modifier: Modifier = Modifier) {
+    val active = !status.isFinal
+    IconTile(
+        icon = painterResource(status.icon),
+        containerColor = if (active) XodoTheme.colors.highlight else XodoTheme.colors.surfaceContainer,
+        contentColor = if (active) XodoTheme.colors.onHighlight else XodoTheme.colors.onSurfaceVariant,
+        modifier = modifier,
+    )
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -218,52 +277,70 @@ fun OrderDetailsScreen(state: OrderDetailsUiState, actions: OrderDetailsActions)
             OrderDetailsUiState.NotFound -> MessageState(stringResource(R.string.order_not_found), modifier)
 
             is OrderDetailsUiState.Loaded -> Column(
-                verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
-                modifier = modifier.verticalScroll(rememberScrollState()).padding(XodoTheme.spacing.m),
+                verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.l),
+                modifier = modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = XodoTheme.spacing.l, vertical = XodoTheme.spacing.m),
             ) { OrderContent(state, actions) }
         }
     }
 }
 
 @Composable
-private fun ColumnScope.OrderContent(state: OrderDetailsUiState.Loaded, actions: OrderDetailsActions) {
+private fun OrderContent(state: OrderDetailsUiState.Loaded, actions: OrderDetailsActions) {
     val order = state.order
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = stringResource(R.string.order_from_store, order.storeName, formatDateTime(order.createdAt)),
-            style = XodoTheme.typography.body,
-            modifier = Modifier.weight(1f),
-        )
-        StatusBadge(order.status.label(), order.status.tone)
-    }
+    StatusHeader(order)
     order.statusReason?.let { Notice(it) }
-    if (!order.status.isFinal) {
-        Text(
-            text = stringResource(R.string.order_live),
-            style = XodoTheme.typography.caption,
-            color = XodoTheme.colors.onSurfaceVariant,
-        )
-    }
-    order.courierName?.let { Text(stringResource(R.string.order_courier, it), style = XodoTheme.typography.body) }
     Actions(state, actions)
-    Timeline(order)
-    Items(order)
-    Values(order)
-    SectionTitle(stringResource(R.string.order_payment_title))
-    Text(text = order.payment.label(), style = XodoTheme.typography.body)
-    SectionTitle(stringResource(R.string.order_address_title))
-    Text(
-        text = stringResource(R.string.order_address_line, order.address.street, order.address.number),
-        style = XodoTheme.typography.body,
-    )
-    dotSeparated(order.address.complement, order.address.neighborhood, order.address.reference).takeIf {
-        it.isNotEmpty()
-    }?.let {
-        Text(text = it, style = XodoTheme.typography.caption, color = XodoTheme.colors.onSurfaceVariant)
+    Section(stringResource(R.string.order_timeline_title)) { Timeline(order) }
+    Section(stringResource(R.string.order_items_title)) { Items(order) }
+    Section(stringResource(R.string.order_delivery_payment_title)) { DeliveryAndPayment(order) }
+}
+
+@Composable
+private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s)) {
+        SectionTitle(title)
+        XodoCard(shape = XodoTheme.shapes.panel) {
+            Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s), content = content)
+        }
     }
-    order.notes?.let {
-        SectionTitle(stringResource(R.string.order_notes_title))
-        Text(text = it, style = XodoTheme.typography.body)
+}
+
+/** Cartão verde no topo: situação, frase do momento, loja e quem entrega. */
+@Composable
+private fun StatusHeader(order: OrderDetails) {
+    val onHighlight = XodoTheme.colors.onHighlight
+    XodoCard(color = XodoTheme.colors.highlight, shape = XodoTheme.shapes.panel, contentPadding = XodoTheme.spacing.l) {
+        Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.m)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusBadge(order.status.label(), order.status.tone)
+                Spacer(Modifier.weight(1f))
+                Icon(painter = painterResource(order.status.icon), contentDescription = null, tint = onHighlight)
+            }
+            Text(text = order.status.headline(), style = XodoTheme.typography.headline, color = onHighlight)
+            Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.xxs)) {
+                Text(
+                    text = dotSeparated(order.storeName, formatDateTime(order.createdAt)),
+                    style = XodoTheme.typography.body,
+                    color = onHighlight,
+                )
+                order.courierName?.let {
+                    Text(
+                        stringResource(R.string.order_courier, it),
+                        style = XodoTheme.typography.body,
+                        color = onHighlight,
+                    )
+                }
+                if (!order.status.isFinal) {
+                    Text(
+                        text = stringResource(R.string.order_live),
+                        style = XodoTheme.typography.caption,
+                        color = onHighlight,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -271,66 +348,74 @@ private fun ColumnScope.OrderContent(state: OrderDetailsUiState.Loaded, actions:
 private fun Actions(state: OrderDetailsUiState.Loaded, actions: OrderDetailsActions) {
     val uriHandler = LocalUriHandler.current
     val order = state.order
-    if (order.status.customerCanCancel) {
-        OutlinedButton(onClick = actions.onAskCancel, enabled = !state.working, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.order_cancel))
+    Column(verticalArrangement = Arrangement.spacedBy(XodoTheme.spacing.xs)) {
+        XodoButton(
+            text = stringResource(R.string.order_reorder),
+            onClick = actions.onReorder,
+            enabled = !state.working,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        order.storeWhatsapp?.let { number ->
+            XodoButton(
+                text = stringResource(R.string.order_whatsapp),
+                onClick = { uriHandler.openUri(whatsappLink(number)) },
+                style = XodoButtonStyle.Tonal,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-    }
-    order.storeWhatsapp?.let { number ->
-        OutlinedButton(onClick = { uriHandler.openUri(whatsappLink(number)) }, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.order_whatsapp))
+        if (order.status.customerCanCancel) {
+            XodoButton(
+                text = stringResource(R.string.order_cancel),
+                onClick = actions.onAskCancel,
+                enabled = !state.working,
+                style = XodoButtonStyle.Outlined,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-    }
-    Button(onClick = actions.onReorder, enabled = !state.working, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.order_reorder))
     }
 }
 
+/** Cada mudança de status com a hora; a última, que é a atual, em destaque. */
 @Composable
 private fun Timeline(order: OrderDetails) {
-    SectionTitle(stringResource(R.string.order_timeline_title))
-    order.history.forEach { change ->
-        Column {
-            Row {
-                Text(text = change.status.label(), style = XodoTheme.typography.body, modifier = Modifier.weight(1f))
+    order.history.forEachIndexed { index, change ->
+        val current = index == order.history.lastIndex
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
+        ) {
+            IconTile(
+                icon = painterResource(if (current) change.status.icon else DesignR.drawable.ic_check),
+                containerColor = if (current) XodoTheme.colors.highlight else XodoTheme.colors.highlightContainer,
+                contentColor = if (current) XodoTheme.colors.onHighlight else XodoTheme.colors.highlight,
+            )
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = formatDateTime(change.at),
-                    style = XodoTheme.typography.caption,
-                    color = XodoTheme.colors.onSurfaceVariant,
+                    text = change.status.label(),
+                    style = if (current) XodoTheme.typography.label else XodoTheme.typography.body,
                 )
+                change.reason?.let {
+                    Text(text = it, style = XodoTheme.typography.caption, color = XodoTheme.colors.onSurfaceVariant)
+                }
             }
-            change.reason?.let {
-                Text(text = it, style = XodoTheme.typography.caption, color = XodoTheme.colors.onSurfaceVariant)
-            }
+            Text(
+                text = formatDateTime(change.at),
+                style = XodoTheme.typography.caption,
+                color = XodoTheme.colors.onSurfaceVariant,
+            )
         }
     }
 }
 
 @Composable
 private fun Items(order: OrderDetails) {
-    SectionTitle(stringResource(R.string.order_items_title))
     order.items.forEach { item ->
-        Row {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.order_item_line, item.quantity, item.productName),
-                    style = XodoTheme.typography.body,
-                )
-                Text(
-                    text = item.variantLabel,
-                    style = XodoTheme.typography.caption,
-                    color = XodoTheme.colors.onSurfaceVariant,
-                )
-            }
-            Text(text = item.total.formatBrl(), style = XodoTheme.typography.price)
-        }
+        ValueRow(
+            stringResource(R.string.order_item_line, item.quantity, item.productName, item.variantLabel),
+            item.total.formatBrl(),
+        )
     }
-}
-
-@Composable
-private fun Values(order: OrderDetails) {
-    SectionTitle(stringResource(R.string.order_values_title))
-    ValueRow(stringResource(R.string.order_subtotal), order.subtotal.formatBrl())
+    HorizontalDivider(thickness = XodoTheme.sizes.divider)
     ValueRow(
         stringResource(R.string.order_delivery),
         if (order.deliveryFee ==
@@ -341,14 +426,51 @@ private fun Values(order: OrderDetails) {
             order.deliveryFee.formatBrl()
         },
     )
-    ValueRow(stringResource(R.string.order_total), order.total.formatBrl())
+    ValueRow(stringResource(R.string.order_total), order.total.formatBrl(), emphasis = true)
 }
 
 @Composable
-private fun ValueRow(label: String, value: String) {
+private fun DeliveryAndPayment(order: OrderDetails) {
+    val address = order.address
+    InfoRow(
+        DesignR.drawable.ic_map_pin,
+        dotSeparated(
+            stringResource(R.string.order_address_line, address.street, address.number),
+            address.complement,
+            address.neighborhood,
+            address.reference,
+        ),
+    )
+    val paymentIcon = when (order.payment) {
+        PaymentChoice.CardOnDelivery -> DesignR.drawable.ic_credit_card
+        is PaymentChoice.Cash, PaymentChoice.PixOnDelivery -> DesignR.drawable.ic_banknote
+    }
+    InfoRow(paymentIcon, order.payment.label())
+    order.notes?.let { InfoRow(DesignR.drawable.ic_receipt_text, stringResource(R.string.order_notes_line, it)) }
+}
+
+@Composable
+private fun InfoRow(@DrawableRes icon: Int, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = XodoTheme.colors.highlight,
+            modifier = Modifier.size(XodoTheme.sizes.icon),
+        )
+        Text(text = text, style = XodoTheme.typography.body, color = XodoTheme.colors.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun ValueRow(label: String, value: String, emphasis: Boolean = false) {
+    val style = if (emphasis) XodoTheme.typography.sectionTitle else XodoTheme.typography.body
     Row(modifier = Modifier.fillMaxWidth()) {
-        Text(text = label, style = XodoTheme.typography.body, modifier = Modifier.weight(1f))
-        Text(text = value, style = XodoTheme.typography.price)
+        Text(text = label, style = style, modifier = Modifier.weight(1f))
+        Text(text = value, style = if (emphasis) style else XodoTheme.typography.price)
     }
 }
 
