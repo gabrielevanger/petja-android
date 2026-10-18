@@ -154,7 +154,7 @@ Disponível no **painel web** e no **modo lojista do app**. Onde a coluna "Onde"
 | RF-91 | Cadastrar os entregadores da loja e atribuir um entregador ao pedido | ambos | MVP |
 | RF-92 | Ver no mapa onde estão os entregadores com entrega em andamento | ambos | V2 |
 
-> O modo lojista pode reaproveitar o KDS Brasa do Jorge: é o mesmo problema de "pedido chega, muda de etapa, avisa com som".
+> O modo lojista funciona como um KDS (Kitchen Display System): pedido chega, muda de etapa e avisa com som.
 
 > **Catálogo inicial:** cadastrado pelo admin ou pelo lojista. Na fase mockada, um script de seed popula lojas e produtos fictícios.
 
@@ -220,7 +220,7 @@ Banho e tosa, clínicas e leva e traz. Anotações para quando chegar a hora:
 | SAIU_PARA_ENTREGA | ENTREGUE, NAO_ENTREGUE |
 | ENTREGUE, RECUSADO, CANCELADO, NAO_ENTREGUE | nenhuma (finais) |
 
-Mesmo padrão do `StageMachine` do KDS: tabela no domínio, `when` exaustivo e validação também no banco.
+Máquina de estados explícita: tabela de transições no domínio, `when` exaustivo e validação também no banco.
 
 ---
 
@@ -239,7 +239,7 @@ Mesmo padrão do `StageMachine` do KDS: tabela no domínio, `when` exaustivo e v
 | RNF-09 | Textos em português, em arquivos de recurso (pronto para traduzir; há público venezuelano em Boa Vista) |
 | RNF-10 | Monitoramento de falhas (Firebase Crashlytics ou Sentry) desde o primeiro teste com usuários |
 | RNF-11 | Testes de unidade no domínio (máquina de estados, carrinho, regras de preço) |
-| RNF-12 | CI rodando build, ktlint e testes a cada push (como no KDS) |
+| RNF-12 | CI rodando build, ktlint e testes a cada push |
 | RNF-13 | Custo de infraestrutura zero ou próximo de zero na fase pessoal (planos grátis) |
 
 ---
@@ -305,9 +305,9 @@ Ferramenta sugerida: Firebase Analytics ou PostHog (plano grátis) mais consulta
 | Tema | Decisão | Motivo |
 |---|---|---|
 | Plataforma | Android nativo, Kotlin | Experiência do dev; Android domina o público |
-| Estrutura | Mesma do KDS: `build-logic`, `core/*`, `feature/*`, domínio em JVM puro | Já validada; facilita um app do lojista no mesmo repositório e uma migração futura para KMP |
+| Estrutura | Modularização recomendada pelo Android (Now in Android): `build-logic`, `core/*`, `feature/*`, domínio em JVM puro | Padrão de mercado; facilita um app do lojista no mesmo repositório e uma migração futura para KMP |
 | UI | Jetpack Compose + Material 3 | |
-| DI | Hilt | Já usado no KDS |
+| DI | Hilt | Padrão recomendado pelo Google para Android |
 | Backend | Supabase (Auth, Postgres, Storage, Realtime) com `supabase-kt` | Sem servidor próprio; plano grátis |
 | Imagens | Coil | |
 | Carrinho local | DataStore ou Room | RF-42 |
@@ -367,7 +367,7 @@ Módulos iniciais: `app`, `core/domain`, `core/data`, `core/designsystem`, `core
 
 | Fase | Entrega | Pronto quando |
 |---|---|---|
-| **0. Base** | Projeto com a estrutura do KDS, Supabase com PostGIS, tabelas, RLS e seed de dados fictícios de Boa Vista | App abre e lista lojas fictícias do banco |
+| **0. Base** | Projeto com a estrutura modular, Supabase com PostGIS, tabelas, RLS e seed de dados fictícios de Boa Vista | App abre e lista lojas fictícias do banco |
 | **1. Vitrine** | RF-01, RF-10 a RF-15, RF-20 a RF-25, RF-30 | Cliente marca o endereço no mapa e vê as lojas que entregam ali, ou os petshops não parceiros |
 | **2. Pedido** | Conta (RF-02 a RF-06), carrinho (RF-40 a RF-45), checkout (RF-50 a RF-52) | Um pedido é criado no banco a partir do app |
 | **3. Operação** | Modo lojista no app (RF-80 a RF-87, RF-91), status em tempo real (RF-60 a RF-64), RN-06 | Pedido feito no app chega à loja e o cliente acompanha o status |
