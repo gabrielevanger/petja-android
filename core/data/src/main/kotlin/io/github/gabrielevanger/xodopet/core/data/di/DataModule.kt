@@ -5,9 +5,11 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.github.gabrielevanger.xodopet.core.data.LogcatDiagnosticLog
 import io.github.gabrielevanger.xodopet.core.data.SupabaseConfig
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStorefrontRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.createXodoSupabaseClient
+import io.github.gabrielevanger.xodopet.core.domain.DiagnosticLog
 import io.github.gabrielevanger.xodopet.core.domain.storefront.LoadStorefront
 import io.github.gabrielevanger.xodopet.core.domain.storefront.StorefrontRepository
 import io.github.jan.supabase.SupabaseClient
@@ -21,6 +23,9 @@ internal abstract class DataModule {
 
     @Binds
     abstract fun storefrontRepository(impl: SupabaseStorefrontRepository): StorefrontRepository
+
+    @Binds
+    abstract fun diagnosticLog(impl: LogcatDiagnosticLog): DiagnosticLog
 
     companion object {
         @Provides
