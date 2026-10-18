@@ -31,11 +31,20 @@ data class XodoSizes(
     val divider: Dp = 1.dp,
     /** Indicador de carregamento dentro de um botão, do tamanho do texto. */
     val inlineProgress: Dp = 18.dp,
+    /** Ícones de traço do layout (Lucide), um pouco menores que os 24 dp do Material. */
+    val icon: Dp = 22.dp,
+    /** Altura dos botões de ação, acima do alvo de toque mínimo. */
+    val button: Dp = 52.dp,
+    /** Largura de cada destino da barra inferior. */
+    val bottomBarItem: Dp = 72.dp,
 )
 
 @Immutable
 data class XodoShapes(
     val badge: Shape = RoundedCornerShape(8.dp),
+    /** Cartões de lista, opções, botões e campos. */
     val card: Shape = RoundedCornerShape(16.dp),
     val notice: Shape = RoundedCornerShape(12.dp),
+    /** Blocos grandes: resumo, perfil, cabeçalho do status do pedido. */
+    val panel: Shape = RoundedCornerShape(24.dp),
 )

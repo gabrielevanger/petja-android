@@ -31,7 +31,7 @@ fun BackTopBar(title: String?, onBack: () -> Unit, modifier: Modifier = Modifier
         title?.let {
             Text(
                 text = it,
-                style = XodoTheme.typography.screenTitle,
+                style = XodoTheme.typography.topBarTitle,
                 maxLines = TITLE_MAX_LINES,
                 overflow = TextOverflow.Ellipsis,
             )

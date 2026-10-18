@@ -14,8 +14,8 @@ private val LocalXodoTypography = staticCompositionLocalOf { DefaultXodoTypograp
 
 /**
  * Ponto único de acesso aos tokens: telas e componentes não declaram cores, medidas, formas
- * nem estilos de texto soltos. As cores são os papéis do Material (primary, surfaceVariant...),
- * com a paleta do lavrado definida em XodoColors.
+ * nem estilos de texto soltos. As cores são os papéis do Material (primary, surfaceVariant...)
+ * mais os do Xodó (highlight, accentContainer...), com a paleta definida em XodoColors.
  */
 object XodoTheme {
     val colors: ColorScheme
@@ -42,6 +42,7 @@ fun XodoTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable (
         LocalXodoSizes provides XodoSizes(),
         LocalXodoShapes provides XodoShapes(),
         LocalXodoTypography provides DefaultXodoTypography,
+        LocalXodoExtendedColors provides if (darkTheme) XodoDarkExtendedColors else XodoLightExtendedColors,
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) XodoDarkColors else XodoLightColors,
