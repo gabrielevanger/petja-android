@@ -2,6 +2,7 @@ package io.github.gabrielevanger.xodopet.feature.storefront
 
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -121,5 +122,25 @@ class StorefrontScreenTest {
         composeRule.onNodeWithText("Petshop Lavrado").performClick()
 
         assertEquals("loja-1", opened)
+    }
+
+    @Test
+    fun accountButtonOpensTheAccount() {
+        var opened = 0
+        composeRule.setContent {
+            XodoTheme {
+                StorefrontScreen(
+                    state = StorefrontUiState(places, places.first(), StorefrontContent.Loading),
+                    onSelectPlace = {},
+                    onRetry = {},
+                    onStoreClick = {},
+                    onAccountClick = { opened++ },
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Sua conta").performClick()
+
+        assertEquals(1, opened)
     }
 }

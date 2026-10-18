@@ -11,9 +11,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,6 +43,7 @@ import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
 fun StorefrontRoute(
     onStoreClick: (storeId: String) -> Unit,
     onCartClick: () -> Unit,
+    onAccountClick: () -> Unit,
     viewModel: StorefrontViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,6 +53,7 @@ fun StorefrontRoute(
         onRetry = viewModel::retry,
         onStoreClick = onStoreClick,
         onCartClick = onCartClick,
+        onAccountClick = onAccountClick,
     )
 }
 
@@ -58,13 +64,14 @@ fun StorefrontScreen(
     onRetry: () -> Unit,
     onStoreClick: (storeId: String) -> Unit,
     onCartClick: () -> Unit = {},
+    onAccountClick: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = XodoTheme.colors.background,
         bottomBar = { state.cartBar?.let { CartBar(it, onClick = onCartClick) } },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
-            PlacePicker(state, onSelectPlace)
+            PlacePicker(state, onSelectPlace, onAccountClick)
             when (val content = state.content) {
                 StorefrontContent.Loading -> LoadingState(stringResource(R.string.storefront_loading))
 
@@ -81,15 +88,20 @@ fun StorefrontScreen(
 }
 
 @Composable
-private fun PlacePicker(state: StorefrontUiState, onSelectPlace: (SamplePlace) -> Unit) {
+private fun PlacePicker(state: StorefrontUiState, onSelectPlace: (SamplePlace) -> Unit, onAccountClick: () -> Unit) {
     val spacing = XodoTheme.spacing
-    Column(modifier = Modifier.padding(top = spacing.m)) {
-        Text(
-            text = stringResource(R.string.storefront_deliver_to),
-            style = XodoTheme.typography.label,
-            color = XodoTheme.colors.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = spacing.m),
-        )
+    Column(modifier = Modifier.padding(top = spacing.xs)) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = spacing.m)) {
+            Text(
+                text = stringResource(R.string.storefront_deliver_to),
+                style = XodoTheme.typography.label,
+                color = XodoTheme.colors.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onAccountClick) {
+                Icon(Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.storefront_account))
+            }
+        }
         LazyRow(
             contentPadding = PaddingValues(horizontal = spacing.m),
             horizontalArrangement = Arrangement.spacedBy(spacing.xs),

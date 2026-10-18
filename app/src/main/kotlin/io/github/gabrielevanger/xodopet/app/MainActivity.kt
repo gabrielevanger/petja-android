@@ -1,13 +1,19 @@
 package io.github.gabrielevanger.xodopet.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
+import io.github.gabrielevanger.xodopet.feature.account.accountScreens
+import io.github.gabrielevanger.xodopet.feature.account.navigateToAccount
+import io.github.gabrielevanger.xodopet.feature.account.navigateToResetPassword
 import io.github.gabrielevanger.xodopet.feature.cart.cartScreen
 import io.github.gabrielevanger.xodopet.feature.cart.navigateToCart
 import io.github.gabrielevanger.xodopet.feature.store.navigateToStore
@@ -17,23 +23,44 @@ import io.github.gabrielevanger.xodopet.feature.storefront.storefrontScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val appViewModel: AppViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Desenha atrás das barras do sistema; as telas usam safeDrawingPadding.
+        // Desenha atrás das barras do sistema; as telas cuidam dos próprios espaços.
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Link de e-mail que abriu o app; ao recriar a Activity (rotação), o link já foi tratado.
+        if (savedInstanceState == null) appViewModel.onLink(intent?.dataString)
         setContent {
             XodoTheme {
                 val navController = rememberNavController()
+                LaunchedEffect(Unit) {
+                    appViewModel.navigation.collect { destination ->
+                        when (destination) {
+                            AppNavigation.ResetPassword -> navController.navigateToResetPassword()
+                            is AppNavigation.Account -> navController.navigateToAccount(destination.notice)
+                        }
+                    }
+                }
                 // Cada feature declara as próprias rotas; o app só liga uma tela à outra.
                 NavHost(navController = navController, startDestination = StorefrontDestination) {
                     storefrontScreen(
                         onStoreClick = navController::navigateToStore,
                         onCartClick = navController::navigateToCart,
+                        onAccountClick = { navController.navigateToAccount() },
                     )
                     storeScreen(onBack = navController::popBackStack, onCartClick = navController::navigateToCart)
                     cartScreen(onBack = navController::popBackStack)
+                    accountScreens(navController)
                 }
             }
         }
+    }
+
+    /** Link aberto com o app já na tela (launchMode singleTop). */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        appViewModel.onLink(intent.dataString)
     }
 }

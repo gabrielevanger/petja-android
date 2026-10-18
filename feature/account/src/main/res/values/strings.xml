@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt">
+    <string name="account_title">Sua conta</string>
+    <string name="account_signed_out_text">Entre para fazer pedidos e acompanhar as entregas. Para ver as lojas, não precisa de conta.</string>
+    <string name="account_sign_in">Entrar</string>
+    <string name="account_sign_up">Criar conta</string>
+    <string name="account_sign_out">Sair da conta</string>
+    <string name="account_hello">Olá, %1$s</string>
+    <string name="account_hello_no_name">Olá!</string>
+    <string name="account_loading">Carregando sua conta</string>
+    <string name="account_notice_email_confirmed">E-mail confirmado. Sua conta está pronta.</string>
+    <string name="account_notice_link_expired">Esse link venceu ou já foi usado. Peça um novo.</string>
+    <string name="account_notice_password_changed">Senha alterada.</string>
+
+    <string name="field_name">Nome</string>
+    <string name="field_email">E-mail</string>
+    <string name="field_password">Senha</string>
+    <string name="field_new_password">Nova senha</string>
+    <string name="field_password_confirmation">Repita a senha</string>
+
+    <string name="field_error_required">Preencha este campo.</string>
+    <string name="field_error_email">Confira o e-mail.</string>
+    <string name="field_error_password_short">Use pelo menos %1$d caracteres.</string>
+    <string name="field_error_passwords_differ">As senhas não são iguais.</string>
+    <string name="field_error_name_short">Escreva seu nome.</string>
+
+    <string name="sign_in_title">Entrar</string>
+    <string name="sign_in_forgot">Esqueci minha senha</string>
+    <string name="sign_in_no_account">Ainda não tem conta? Criar conta</string>
+
+    <string name="sign_up_title">Criar conta</string>
+    <string name="sign_up_confirm_title">Confira seu e-mail</string>
+    <string name="sign_up_confirm_text">Enviamos um link para %1$s. Abra o link neste celular para ativar a conta.</string>
+
+    <string name="forgot_title">Esqueci minha senha</string>
+    <string name="forgot_text">Digite o e-mail da conta. Vamos mandar um link para você criar uma senha nova.</string>
+    <string name="forgot_send">Enviar link</string>
+    <string name="forgot_sent">Se houver uma conta com %1$s, o link chega em alguns minutos. Abra o link neste celular.</string>
+
+    <string name="reset_title">Criar senha nova</string>
+    <string name="reset_save">Salvar senha</string>
+
+    <string name="error_invalid_credentials">E-mail ou senha incorretos.</string>
+    <string name="error_email_not_confirmed">Confirme o e-mail pelo link que enviamos antes de entrar.</string>
+    <string name="error_email_in_use">Já existe uma conta com esse e-mail. Tente entrar.</string>
+    <string name="error_weak_password">Essa senha é fácil de adivinhar. Escolha outra.</string>
+    <string name="error_same_password">A senha nova precisa ser diferente da atual.</string>
+    <string name="error_invalid_email">Confira o e-mail.</string>
+    <string name="error_too_many_emails">Muitos e-mails em pouco tempo. Espere alguns minutos e tente de novo.</string>
+    <string name="error_network">Sem conexão. Confira a internet e tente de novo.</string>
+    <string name="error_unknown">Algo deu errado. Tente de novo.</string>
+</resources>
