@@ -9,12 +9,16 @@ import io.github.gabrielevanger.xodopet.core.data.LogcatDiagnosticLog
 import io.github.gabrielevanger.xodopet.core.data.SupabaseConfig
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseAccountRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseAuthLinkHandler
+import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseCheckoutRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStoreRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStorefrontRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.createXodoSupabaseClient
 import io.github.gabrielevanger.xodopet.core.domain.DiagnosticLog
 import io.github.gabrielevanger.xodopet.core.domain.account.AccountRepository
 import io.github.gabrielevanger.xodopet.core.domain.account.AuthLinkHandler
+import io.github.gabrielevanger.xodopet.core.domain.cart.CartActions
+import io.github.gabrielevanger.xodopet.core.domain.checkout.CheckoutRepository
+import io.github.gabrielevanger.xodopet.core.domain.checkout.PlaceOrder
 import io.github.gabrielevanger.xodopet.core.domain.delivery.QuoteDelivery
 import io.github.gabrielevanger.xodopet.core.domain.store.LoadStoreCatalog
 import io.github.gabrielevanger.xodopet.core.domain.store.StoreRepository
@@ -42,6 +46,9 @@ internal abstract class DataModule {
     abstract fun authLinkHandler(impl: SupabaseAuthLinkHandler): AuthLinkHandler
 
     @Binds
+    abstract fun checkoutRepository(impl: SupabaseCheckoutRepository): CheckoutRepository
+
+    @Binds
     abstract fun diagnosticLog(impl: LogcatDiagnosticLog): DiagnosticLog
 
     companion object {
@@ -55,6 +62,10 @@ internal abstract class DataModule {
 
         @Provides
         fun loadStoreCatalog(repository: StoreRepository): LoadStoreCatalog = LoadStoreCatalog(repository)
+
+        @Provides
+        fun placeOrder(repository: CheckoutRepository, cartActions: CartActions): PlaceOrder =
+            PlaceOrder(repository, cartActions)
 
         @Provides
         fun quoteDelivery(repository: StorefrontRepository): QuoteDelivery = QuoteDelivery(repository)
