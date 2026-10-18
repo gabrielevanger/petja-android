@@ -91,7 +91,8 @@ class SupabaseStoreOrderRepositoryTest {
         assertEquals("eq.s1", url.parameters["store_id"])
         val or = url.parameters["or"].orEmpty()
         assertTrue(or.contains("status.in.(pending,accepted,preparing,out_for_delivery)"), or)
-        assertTrue(or.contains("created_at.gte.2026-10-17T15:00:00Z"), or)
+        // O supabase-kt põe a data entre aspas dentro do "or", o que o PostgREST aceita.
+        assertTrue(or.contains("created_at.gte.\"2026-10-17T15:00:00Z\""), or)
         assertTrue(url.parameters["order"].orEmpty().startsWith("created_at.desc"))
 
         val first = orders[0]
