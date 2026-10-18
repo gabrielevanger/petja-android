@@ -12,7 +12,13 @@ import org.gradle.kotlin.dsl.configure
  */
 internal const val COVERAGE_VARIANT = "coverage"
 
-internal fun Project.configureKover(android: Boolean) {
+/** Mínimo de linhas cobertas por testes em todo módulo com código (regra do projeto, ver CONTRIBUTING). */
+internal const val MODULE_MIN_LINES = 80
+
+/**
+ * @param verifyMinimum false só no app, que tem apenas Activity e Application, fora da conta da cobertura.
+ */
+internal fun Project.configureKover(android: Boolean, verifyMinimum: Boolean = true) {
     pluginManager.apply("org.jetbrains.kotlinx.kover")
     extensions.configure<KoverProjectExtension> {
         currentProject {
@@ -22,12 +28,17 @@ internal fun Project.configureKover(android: Boolean) {
         }
         reports {
             filters { excludeGeneratedCode() }
+            if (verifyMinimum) {
+                variant(COVERAGE_VARIANT) {
+                    verify { rule("Mínimo do projeto") { minBound(MODULE_MIN_LINES, CoverageUnit.LINE) } }
+                }
+            }
         }
     }
 }
 
 /**
- * Piso de cobertura do módulo, conferido por `./gradlew koverVerifyCoverage`.
+ * Piso de cobertura acima do mínimo, para módulos de regra de negócio, conferido por `./gradlew koverVerifyCoverage`.
  * Ramos só fazem sentido onde não há Compose: o compilador do Compose gera ramos internos
  * que nenhum teste de tela percorre.
  */

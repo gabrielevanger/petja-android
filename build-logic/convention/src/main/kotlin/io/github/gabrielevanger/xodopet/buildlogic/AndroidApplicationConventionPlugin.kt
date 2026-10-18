@@ -23,7 +23,7 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
             }
             configureUnitTests()
             configureKtlint()
-            configureKover(android = true)
+            configureKover(android = true, verifyMinimum = false)
         }
     }
 }
