@@ -58,9 +58,11 @@ fun AccountRoute(
     onSignIn: () -> Unit,
     onSignUp: () -> Unit,
     onOrders: () -> Unit,
+    onStoreMode: () -> Unit,
     viewModel: AccountViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val canOperateStore by viewModel.canOperateStore.collectAsStateWithLifecycle()
     AccountScreen(
         state,
         viewModel.notice,
@@ -69,6 +71,7 @@ fun AccountRoute(
         onSignUp,
         onSignOut = viewModel::signOut,
         onOrders = onOrders,
+        onStoreMode = onStoreMode.takeIf { canOperateStore },
     )
 }
 
@@ -81,6 +84,8 @@ fun AccountScreen(
     onSignUp: () -> Unit,
     onSignOut: () -> Unit,
     onOrders: () -> Unit = {},
+    /** Só aparece para dono ou atendente de uma loja. */
+    onStoreMode: (() -> Unit)? = null,
 ) {
     AccountScaffold(title = stringResource(R.string.account_title), onBack = onBack) {
         notice?.let { ConfirmationBanner(stringResource(it.messageRes())) }
@@ -115,6 +120,15 @@ fun AccountScreen(
                         style = XodoButtonStyle.Tonal,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+                onStoreMode?.let {
+                    IconAction(DesignR.drawable.ic_store) {
+                        XodoButton(
+                            text = stringResource(R.string.account_store_mode),
+                            onClick = it,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
                 IconAction(DesignR.drawable.ic_log_out) {
                     XodoButton(
