@@ -30,7 +30,12 @@ class StorefrontViewModelTest {
     @AfterEach
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() = StorefrontViewModel(LoadStorefront(repository))
+    private val warnings = mutableListOf<Pair<String, Throwable?>>()
+
+    private fun viewModel() = StorefrontViewModel(LoadStorefront(repository)) { message, cause ->
+        warnings +=
+            message to cause
+    }
 
     @Test
     fun `loads the first place on start`() = runTest(dispatcher) {
@@ -81,6 +86,7 @@ class StorefrontViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
         assertEquals(StorefrontContent.Error, viewModel.uiState.value.content)
+        assertEquals("sem rede", warnings.single().second?.message, "a causa vai para o log")
 
         viewModel.retry()
         advanceUntilIdle()
