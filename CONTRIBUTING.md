@@ -17,6 +17,22 @@ a uma issue e a `main` sempre verde.
 5. **CI verde** antes do merge: ktlint, Android Lint, testes do app, testes do banco e mensagens de commit.
 6. **Merge commit**, sem squash nem rebase, para preservar o histórico de cada passo.
 
+### A `main` é protegida
+
+Os passos 4 e 5 não dependem só de disciplina: o ruleset **Proteção da main** (Settings → Rules → Rulesets)
+faz o GitHub recusar o que fugir deles.
+
+| Regra | Na prática |
+|---|---|
+| Pull request obrigatório | Nada entra por `git push` direto na `main`; tudo passa por PR. Não exige aprovação, porque o GitHub não deixa aprovar o próprio PR. |
+| Checks do CI obrigatórios | O merge só libera com "App: análise estática, testes e APK", "Banco: migrações, seed e RLS" e "Mensagens de commit" verdes. A branch não precisa estar atualizada com a `main`. |
+| Conversas resolvidas | Comentário de revisão em aberto segura o merge. |
+| Sem push forçado e sem exclusão | O histórico da `main` não é reescrito e a branch não pode ser apagada. |
+
+Ninguém tem exceção, nem quem administra o repositório. Se um dia for preciso mexer direto na `main`,
+desligue o ruleset pela tela, faça a mudança e ligue de novo. Se um check mudar de nome no
+`.github/workflows/ci.yml`, atualize o nome no ruleset também, ou nenhum PR consegue ser mesclado.
+
 ## Mensagens de commit
 
 [Conventional Commits](https://www.conventionalcommits.org/pt-br/) em português, no imperativo da 3ª pessoa:
