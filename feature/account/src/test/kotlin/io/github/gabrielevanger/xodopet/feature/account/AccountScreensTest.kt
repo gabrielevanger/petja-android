@@ -9,6 +9,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
@@ -57,6 +58,17 @@ class AccountScreensTest {
         composeRule.onNodeWithText("Sair da conta").performClick()
         assertEquals(1, signOut)
         assertEquals(1, orders)
+    }
+
+    @Test
+    fun storeTeamSeesTheStoreModeShortcut() {
+        var storeMode = 0
+        show {
+            AccountScreen(AccountState.SignedIn(ANA), null, {}, {}, {}, {}, onStoreMode = { storeMode++ })
+        }
+
+        composeRule.onNodeWithText("Modo lojista").performScrollTo().performClick()
+        assertEquals(1, storeMode)
     }
 
     @Test

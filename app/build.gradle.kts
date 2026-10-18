@@ -40,6 +40,7 @@ dependencies {
     implementation(projects.feature.account)
     implementation(projects.feature.checkout)
     implementation(projects.feature.orders)
+    implementation(projects.feature.storemode)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

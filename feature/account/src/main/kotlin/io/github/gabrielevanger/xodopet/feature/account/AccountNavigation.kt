@@ -34,14 +34,19 @@ fun NavController.navigateToSignIn() = navigate(SignInDestination) { launchSingl
 
 fun NavController.navigateToResetPassword() = navigate(ResetPasswordDestination) { launchSingleTop = true }
 
-/** Telas de conta. Depois de entrar ou cadastrar, volta para quem pediu o login (a conta ou o carrinho). */
-fun NavGraphBuilder.accountScreens(navController: NavController, onOrders: () -> Unit) {
+/**
+ * Telas de conta. Depois de entrar ou cadastrar, volta para quem pediu o login (a conta ou o carrinho).
+ *
+ * @param onStoreMode atalho para os pedidos da loja, para quem é da equipe de uma.
+ */
+fun NavGraphBuilder.accountScreens(navController: NavController, onOrders: () -> Unit, onStoreMode: () -> Unit) {
     composable<AccountDestination> {
         AccountRoute(
             onBack = navController::popBackStack,
             onSignIn = { navController.navigate(SignInDestination) },
             onSignUp = { navController.navigate(SignUpDestination) },
             onOrders = onOrders,
+            onStoreMode = onStoreMode,
         )
     }
     composable<SignInDestination> {

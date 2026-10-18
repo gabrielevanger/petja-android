@@ -17,6 +17,12 @@ Modularização por camada e por funcionalidade, como recomenda o [guia de modul
 ```
 app .................. MainActivity, configuração do Supabase
 feature/storefront ... vitrine: lojas que entregam no endereço (ou petshops não parceiros)
+feature/store ........ página da loja, com categorias e produtos
+feature/cart ......... carrinho, taxa de entrega e pedido mínimo
+feature/checkout ..... endereço, pagamento na entrega e pedido enviado
+feature/orders ....... meus pedidos e acompanhamento ao vivo
+feature/account ...... entrar, criar conta, senha e conta
+feature/storemode .... modo lojista: pedidos da loja ao vivo, etapas e alerta sonoro
 core/ui .............. formatação (R$, distância) e links de contato
 core/designsystem .... tema do Xodó (paleta do lavrado), claro e escuro
 core/data ............ Supabase (PostgREST via supabase-kt), DTOs e mapeamento

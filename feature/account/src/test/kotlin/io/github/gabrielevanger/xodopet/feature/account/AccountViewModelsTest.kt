@@ -6,8 +6,10 @@ import io.github.gabrielevanger.xodopet.core.domain.account.AccountError
 import io.github.gabrielevanger.xodopet.core.domain.account.AccountState
 import io.github.gabrielevanger.xodopet.core.domain.account.FieldError
 import io.github.gabrielevanger.xodopet.core.domain.account.SignUpResult
+import io.github.gabrielevanger.xodopet.core.domain.storemode.StoreOrderError
 import io.github.gabrielevanger.xodopet.core.domain.testing.ANA
 import io.github.gabrielevanger.xodopet.core.domain.testing.FakeAccountRepository
+import io.github.gabrielevanger.xodopet.core.domain.testing.FakeStoreOrderRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.launchIn
@@ -164,7 +166,13 @@ class AccountViewModelsTest {
     @Test
     fun `account screen state, notice and sign out`() = runTest(dispatcher) {
         val signedIn = FakeAccountRepository(AccountState.SignedIn(ANA))
-        val viewModel = AccountViewModel(SavedStateHandle(mapOf(NOTICE_ARG to "EmailConfirmed")), signedIn, log)
+        val viewModel =
+            AccountViewModel(
+                SavedStateHandle(mapOf(NOTICE_ARG to "EmailConfirmed")),
+                signedIn,
+                FakeStoreOrderRepository(),
+                log,
+            )
         viewModel.state.launchIn(backgroundScope)
         advanceUntilIdle()
 
@@ -179,12 +187,51 @@ class AccountViewModelsTest {
     @Test
     fun `sign out failure is only logged`() = runTest(dispatcher) {
         val signedIn = FakeAccountRepository(AccountState.SignedIn(ANA)).apply { failWith = AccountError.Network }
-        val viewModel = AccountViewModel(SavedStateHandle(), signedIn, log)
+        val viewModel = AccountViewModel(SavedStateHandle(), signedIn, FakeStoreOrderRepository(), log)
 
         viewModel.signOut()
         advanceUntilIdle()
 
         assertNull(viewModel.notice)
         assertEquals(1, warnings.size)
+    }
+
+    @Test
+    fun `store mode shortcut only for the store team`() = runTest(dispatcher) {
+        val team = AccountViewModel(
+            SavedStateHandle(),
+            FakeAccountRepository(AccountState.SignedIn(ANA)),
+            FakeStoreOrderRepository(),
+            log,
+        )
+        team.canOperateStore.launchIn(backgroundScope)
+        advanceUntilIdle()
+        assertTrue(team.canOperateStore.value)
+
+        val customer = AccountViewModel(
+            SavedStateHandle(),
+            FakeAccountRepository(AccountState.SignedIn(ANA)),
+            FakeStoreOrderRepository(stores = emptyList()),
+            log,
+        )
+        customer.canOperateStore.launchIn(backgroundScope)
+        advanceUntilIdle()
+        assertFalse(customer.canOperateStore.value)
+
+        val offline = AccountViewModel(
+            SavedStateHandle(),
+            FakeAccountRepository(AccountState.SignedIn(ANA)),
+            FakeStoreOrderRepository().apply { failWith = StoreOrderError.Network },
+            log,
+        )
+        offline.canOperateStore.launchIn(backgroundScope)
+        advanceUntilIdle()
+        assertFalse(offline.canOperateStore.value)
+        assertEquals(1, warnings.size, "a falha fica no log e o atalho some")
+
+        val signedOut = AccountViewModel(SavedStateHandle(), FakeAccountRepository(), FakeStoreOrderRepository(), log)
+        signedOut.canOperateStore.launchIn(backgroundScope)
+        advanceUntilIdle()
+        assertFalse(signedOut.canOperateStore.value)
     }
 }

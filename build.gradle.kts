@@ -28,4 +28,5 @@ dependencies {
     kover(projects.feature.account)
     kover(projects.feature.checkout)
     kover(projects.feature.orders)
+    kover(projects.feature.storemode)
 }

@@ -26,6 +26,8 @@ import io.github.gabrielevanger.xodopet.feature.store.navigateToStore
 import io.github.gabrielevanger.xodopet.feature.store.storeScreen
 import io.github.gabrielevanger.xodopet.feature.storefront.StorefrontDestination
 import io.github.gabrielevanger.xodopet.feature.storefront.storefrontScreen
+import io.github.gabrielevanger.xodopet.feature.storemode.navigateToStoreMode
+import io.github.gabrielevanger.xodopet.feature.storemode.storeModeScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -71,7 +73,12 @@ class MainActivity : ComponentActivity() {
                             navController.navigateToOrder(orderId)
                         },
                     )
-                    accountScreens(navController, onOrders = navController::navigateToOrders)
+                    accountScreens(
+                        navController,
+                        onOrders = navController::navigateToOrders,
+                        onStoreMode = navController::navigateToStoreMode,
+                    )
+                    storeModeScreen(navController, onSignIn = navController::navigateToSignIn)
                     ordersScreens(
                         navController,
                         onSignIn = navController::navigateToSignIn,

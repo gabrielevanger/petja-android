@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt">
+    <string name="store_mode_title">Pedidos da loja</string>
+    <string name="store_mode_loading">Carregando os pedidos da loja</string>
+    <string name="store_mode_error">Não foi possível carregar os pedidos. Confira a internet e tente de novo.</string>
+    <string name="store_mode_not_signed_in">Entre com a conta da loja para ver os pedidos.</string>
+    <string name="store_mode_sign_in">Entrar</string>
+    <string name="store_mode_no_store">Esta conta não é da equipe de nenhuma loja.</string>
+    <string name="store_mode_live">Atualiza sozinho e toca um som quando chega pedido. A tela fica acesa.</string>
+    <string name="store_mode_empty">Nenhum pedido agora. Quando chegar, você ouve o aviso.</string>
+
+    <string name="store_mode_section_new">Novos</string>
+    <string name="store_mode_section_active">Em andamento</string>
+    <string name="store_mode_section_finished">Encerrados nas últimas 24 horas</string>
+
+    <string name="store_order_title">#%1$d · %2$s</string>
+    <string name="store_order_item">%1$d× %2$s %3$s</string>
+    <string name="store_order_address">%1$s, %2$s</string>
+    <string name="store_order_notes">Observação: %1$s</string>
+    <string name="store_order_reason">Motivo: %1$s</string>
+    <string name="store_order_payment_cash">Dinheiro</string>
+    <string name="store_order_payment_cash_change">Dinheiro · levar troco para %1$s</string>
+    <string name="store_order_payment_pix">Pix na entrega</string>
+    <string name="store_order_payment_card">Cartão na maquininha</string>
+
+    <string name="store_status_pending">Novo</string>
+    <string name="store_status_accepted">Aceito</string>
+    <string name="store_status_preparing">Em separação</string>
+    <string name="store_status_out_for_delivery">Saiu para entrega</string>
+    <string name="store_status_delivered">Entregue</string>
+    <string name="store_status_not_delivered">Não entregue</string>
+    <string name="store_status_rejected">Recusado</string>
+    <string name="store_status_canceled">Cancelado</string>
+
+    <string name="store_action_accept">Aceitar</string>
+    <string name="store_action_reject">Recusar</string>
+    <string name="store_action_start_preparing">Começar a separar</string>
+    <string name="store_action_send_out">Saiu para entrega</string>
+    <string name="store_action_deliver">Entregue</string>
+    <string name="store_action_not_deliver">Não foi possível entregar</string>
+
+    <string name="store_reason_reject_title">Recusar o pedido #%1$d?</string>
+    <string name="store_reason_not_deliver_title">Não entregou o pedido #%1$d?</string>
+    <string name="store_reason_text">O cliente vê o motivo no acompanhamento do pedido.</string>
+    <string name="store_reason_field">Motivo</string>
+    <string name="store_reason_confirm">Confirmar</string>
+    <string name="store_reason_dismiss">Voltar</string>
+
+    <string name="store_message_action_failed">Não deu certo agora. Confira a internet e tente de novo.</string>
+    <string name="store_message_out_of_date">Esse pedido já mudou. A lista foi atualizada.</string>
+    <string name="store_message_not_allowed">Esta conta não pode mudar esse pedido.</string>
+</resources>
