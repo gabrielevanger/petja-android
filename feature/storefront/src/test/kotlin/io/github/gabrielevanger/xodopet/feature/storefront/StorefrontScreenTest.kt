@@ -21,13 +21,19 @@ class StorefrontScreenTest {
 
     private val places = BoaVistaSamplePlaces.toImmutableList()
 
-    private fun show(content: StorefrontContent, onSelectPlace: (SamplePlace) -> Unit = {}, onRetry: () -> Unit = {}) {
+    private fun show(
+        content: StorefrontContent,
+        onSelectPlace: (SamplePlace) -> Unit = {},
+        onRetry: () -> Unit = {},
+        onStoreClick: (String) -> Unit = {},
+    ) {
         composeRule.setContent {
             XodoTheme {
                 StorefrontScreen(
                     state = StorefrontUiState(places, places.first(), content),
                     onSelectPlace = onSelectPlace,
                     onRetry = onRetry,
+                    onStoreClick = onStoreClick,
                 )
             }
         }
@@ -89,5 +95,22 @@ class StorefrontScreenTest {
         composeRule.onNodeWithText("Caçari").performClick()
 
         assertEquals("Caçari", selected?.name)
+    }
+
+    @Test
+    fun tappingAStoreOpensIt() {
+        var opened: String? = null
+        show(
+            StorefrontContent.Loaded(
+                partners = persistentListOf(
+                    StoreCardUi("loja-1", "Petshop Lavrado", "Centro", true, 40, "R$ 5,00", false, null, "440 m"),
+                ),
+            ),
+            onStoreClick = { opened = it },
+        )
+
+        composeRule.onNodeWithText("Petshop Lavrado").performClick()
+
+        assertEquals("loja-1", opened)
     }
 }
