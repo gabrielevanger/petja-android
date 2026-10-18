@@ -29,6 +29,8 @@ data class XodoSizes(
     /** Alvo de toque mínimo recomendado pelo Material e pelas diretrizes de acessibilidade (RNF-07). */
     val minTouchTarget: Dp = 48.dp,
     val divider: Dp = 1.dp,
+    /** Indicador de carregamento dentro de um botão, do tamanho do texto. */
+    val inlineProgress: Dp = 18.dp,
 )
 
 @Immutable
