@@ -8,6 +8,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object StorefrontDestination
 
-fun NavGraphBuilder.storefrontScreen(onStoreClick: (storeId: String) -> Unit) {
-    composable<StorefrontDestination> { StorefrontRoute(onStoreClick = onStoreClick) }
+fun NavGraphBuilder.storefrontScreen(onStoreClick: (storeId: String) -> Unit, onCartClick: () -> Unit) {
+    composable<StorefrontDestination> { StorefrontRoute(onStoreClick = onStoreClick, onCartClick = onCartClick) }
 }

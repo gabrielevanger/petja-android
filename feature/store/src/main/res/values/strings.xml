@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt">
     <string name="store_loading">Carregando a loja</string>
     <string name="store_error">Não foi possível carregar a loja. Confira a internet e tente de novo.</string>
     <string name="store_not_found">Esta loja não está mais disponível.</string>
@@ -11,7 +11,6 @@
     <string name="store_price_from">a partir de %1$s</string>
     <string name="store_unavailable">Indisponível</string>
     <string name="store_options_title">Opções</string>
-    <string name="store_cart_soon">Adicionar ao carrinho chega na próxima versão.</string>
 
     <string name="species_dog">Cães</string>
     <string name="species_cat">Gatos</string>
@@ -20,4 +19,12 @@
     <string name="species_rodent">Roedores</string>
     <string name="species_reptile">Répteis</string>
     <string name="species_other">Outros pets</string>
+    <string name="store_add">Adicionar</string>
+    <string name="store_added">%1$s (%2$s) no carrinho</string>
+    <string name="store_limit_reached">Você já tem no carrinho tudo o que a loja tem dessa opção.</string>
+    <string name="store_option_unavailable">Essa opção acabou de ficar indisponível.</string>
+    <string name="store_replace_title">Começar um novo carrinho?</string>
+    <string name="store_replace_text">Seu carrinho tem itens da %1$s. Para adicionar desta loja, eles saem do carrinho.</string>
+    <string name="store_replace_confirm">Esvaziar e adicionar</string>
+    <string name="store_replace_dismiss">Manter carrinho</string>
 </resources>

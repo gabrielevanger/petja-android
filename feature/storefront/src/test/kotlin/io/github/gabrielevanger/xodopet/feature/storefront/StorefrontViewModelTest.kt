@@ -1,10 +1,16 @@
 package io.github.gabrielevanger.xodopet.feature.storefront
 
 import app.cash.turbine.test
+import io.github.gabrielevanger.xodopet.core.domain.model.Cart
+import io.github.gabrielevanger.xodopet.core.domain.model.CartLine
+import io.github.gabrielevanger.xodopet.core.domain.model.Money
 import io.github.gabrielevanger.xodopet.core.domain.storefront.LoadStorefront
+import io.github.gabrielevanger.xodopet.core.domain.testing.FakeCartRepository
+import io.github.gabrielevanger.xodopet.core.domain.testing.FakeDeliveryPlaceRepository
 import io.github.gabrielevanger.xodopet.core.domain.testing.FakeStorefrontRepository
 import io.github.gabrielevanger.xodopet.core.domain.testing.aStore
 import io.github.gabrielevanger.xodopet.core.domain.testing.anExternalStore
+import io.github.gabrielevanger.xodopet.core.ui.CartBarUi
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,9 +38,11 @@ class StorefrontViewModelTest {
 
     private val warnings = mutableListOf<Pair<String, Throwable?>>()
 
-    private fun viewModel() = StorefrontViewModel(LoadStorefront(repository)) { message, cause ->
-        warnings +=
-            message to cause
+    private val places = FakeDeliveryPlaceRepository()
+    private val cart = FakeCartRepository()
+
+    private fun viewModel() = StorefrontViewModel(LoadStorefront(repository), places, cart) { message, cause ->
+        warnings += message to cause
     }
 
     @Test
@@ -105,5 +113,34 @@ class StorefrontViewModelTest {
         assertEquals(buritis, viewModel.uiState.value.selectedPlace)
         assertInstanceOf(StorefrontContent.Loaded::class.java, viewModel.uiState.value.content)
         assertEquals(buritis.point, repository.storesNearCalls.last())
+    }
+
+    @Test
+    fun `remembers the chosen place`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        val buritis = BoaVistaSamplePlaces.first { it.name == "Buritis" }
+
+        viewModel.selectPlace(buritis)
+        advanceUntilIdle()
+        assertEquals("Buritis", places.place.value?.name)
+
+        val reopened = viewModel()
+        advanceUntilIdle()
+        assertEquals(buritis, reopened.uiState.value.selectedPlace)
+        assertEquals(buritis.point, repository.storesNearCalls.last())
+    }
+
+    @Test
+    fun `shows the cart bar when the cart has items`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        assertEquals(null, viewModel.uiState.value.cartBar)
+
+        val line = CartLine("v", "p", "Ração", "1 kg", Money(3090), quantity = 2, maxQuantity = 5)
+        cart.update { Cart("store-1", "Petshop Lavrado", Money(3000), listOf(line)) }
+        advanceUntilIdle()
+
+        assertEquals(CartBarUi("Petshop Lavrado", 2, "R$ 61,80"), viewModel.uiState.value.cartBar)
     }
 }

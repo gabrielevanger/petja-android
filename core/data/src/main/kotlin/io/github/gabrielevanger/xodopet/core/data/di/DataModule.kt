@@ -11,6 +11,7 @@ import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStoreRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStorefrontRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.createXodoSupabaseClient
 import io.github.gabrielevanger.xodopet.core.domain.DiagnosticLog
+import io.github.gabrielevanger.xodopet.core.domain.delivery.QuoteDelivery
 import io.github.gabrielevanger.xodopet.core.domain.store.LoadStoreCatalog
 import io.github.gabrielevanger.xodopet.core.domain.store.StoreRepository
 import io.github.gabrielevanger.xodopet.core.domain.storefront.LoadStorefront
@@ -44,5 +45,8 @@ internal abstract class DataModule {
 
         @Provides
         fun loadStoreCatalog(repository: StoreRepository): LoadStoreCatalog = LoadStoreCatalog(repository)
+
+        @Provides
+        fun quoteDelivery(repository: StorefrontRepository): QuoteDelivery = QuoteDelivery(repository)
     }
 }

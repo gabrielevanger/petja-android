@@ -1,6 +1,7 @@
 package io.github.gabrielevanger.xodopet.feature.storefront
 
 import androidx.compose.runtime.Immutable
+import io.github.gabrielevanger.xodopet.core.ui.CartBarUi
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -9,6 +10,8 @@ data class StorefrontUiState(
     val places: ImmutableList<SamplePlace>,
     val selectedPlace: SamplePlace,
     val content: StorefrontContent = StorefrontContent.Loading,
+    /** Resumo do carrinho para a barra de baixo; null quando vazio. */
+    val cartBar: CartBarUi? = null,
 )
 
 @Immutable

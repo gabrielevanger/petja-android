@@ -13,6 +13,6 @@ internal const val STORE_ID_ARG = "storeId"
 
 fun NavController.navigateToStore(storeId: String) = navigate(StoreDestination(storeId))
 
-fun NavGraphBuilder.storeScreen(onBack: () -> Unit) {
-    composable<StoreDestination> { StoreRoute(onBack = onBack) }
+fun NavGraphBuilder.storeScreen(onBack: () -> Unit, onCartClick: () -> Unit) {
+    composable<StoreDestination> { StoreRoute(onBack = onBack, onCartClick = onCartClick) }
 }

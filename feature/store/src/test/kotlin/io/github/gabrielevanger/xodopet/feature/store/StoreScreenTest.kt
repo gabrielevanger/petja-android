@@ -1,5 +1,6 @@
 package io.github.gabrielevanger.xodopet.feature.store
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 import io.github.gabrielevanger.xodopet.core.domain.model.PetSpecies
+import io.github.gabrielevanger.xodopet.core.ui.CartBarUi
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -104,6 +106,60 @@ class StoreScreenTest {
         composeRule.onNodeWithText("Golden · Cães").assertExists()
         composeRule.onNodeWithText("1 kg").assertExists()
         composeRule.onNodeWithText("R$ 30,90").assertExists()
+    }
+
+    @Test
+    fun addButtonOnlyForAvailableOptions() {
+        var added: String? = null
+        val detail = ProductDetailUi(
+            "golden",
+            "Ração Golden Adultos",
+            "Golden",
+            null,
+            persistentListOf(PetSpecies.DOG),
+            persistentListOf(VariantUi("1", "1 kg", "R$ 30,90", true), VariantUi("15", "15 kg", "R$ 219,90", false)),
+        )
+        composeRule.setContent {
+            XodoTheme {
+                StoreScreen(
+                    state = StoreUiState.Loaded(header, sections, selectedProduct = detail),
+                    onBack = {},
+                    onRetry = {},
+                    onProductClick = {},
+                    onProductDismiss = {},
+                    onAddToCart = { added = it },
+                )
+            }
+        }
+
+        composeRule.onAllNodesWithText("Adicionar").assertCountEquals(1)
+        composeRule.onNodeWithText("Adicionar").performClick()
+
+        assertEquals("1", added)
+    }
+
+    @Test
+    fun replacePromptAndCartBar() {
+        var confirmed = 0
+        composeRule.setContent {
+            XodoTheme {
+                StoreScreen(
+                    state = StoreUiState.Loaded(header, sections),
+                    onBack = {},
+                    onRetry = {},
+                    onProductClick = {},
+                    onProductDismiss = {},
+                    cartBar = CartBarUi("Petshop Lavrado", 2, "R$ 61,80"),
+                    cartState = StoreCartState(replacePrompt = ReplaceCartPrompt("Casa do Bicho", "1")),
+                    onConfirmReplaceCart = { confirmed++ },
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Seu carrinho tem itens da Casa do Bicho", substring = true).assertExists()
+        composeRule.onNodeWithText("Esvaziar e adicionar").performClick()
+        assertEquals(1, confirmed)
+        composeRule.onNodeWithText("2 itens · R$ 61,80").assertExists()
     }
 
     @Test

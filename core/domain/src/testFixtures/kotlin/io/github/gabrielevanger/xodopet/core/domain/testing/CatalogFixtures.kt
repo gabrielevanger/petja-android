@@ -48,3 +48,5 @@ fun aProduct(
     category = category,
     variants = variants,
 )
+
+val CENTRO_PLACE = io.github.gabrielevanger.xodopet.core.domain.model.DeliveryPlace("Centro", CENTRO)
