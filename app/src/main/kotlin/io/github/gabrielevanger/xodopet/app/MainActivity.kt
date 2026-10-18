@@ -14,8 +14,11 @@ import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 import io.github.gabrielevanger.xodopet.feature.account.accountScreens
 import io.github.gabrielevanger.xodopet.feature.account.navigateToAccount
 import io.github.gabrielevanger.xodopet.feature.account.navigateToResetPassword
+import io.github.gabrielevanger.xodopet.feature.account.navigateToSignIn
 import io.github.gabrielevanger.xodopet.feature.cart.cartScreen
 import io.github.gabrielevanger.xodopet.feature.cart.navigateToCart
+import io.github.gabrielevanger.xodopet.feature.checkout.checkoutScreens
+import io.github.gabrielevanger.xodopet.feature.checkout.navigateToCheckout
 import io.github.gabrielevanger.xodopet.feature.store.navigateToStore
 import io.github.gabrielevanger.xodopet.feature.store.storeScreen
 import io.github.gabrielevanger.xodopet.feature.storefront.StorefrontDestination
@@ -51,7 +54,16 @@ class MainActivity : ComponentActivity() {
                         onAccountClick = { navController.navigateToAccount() },
                     )
                     storeScreen(onBack = navController::popBackStack, onCartClick = navController::navigateToCart)
-                    cartScreen(onBack = navController::popBackStack)
+                    cartScreen(
+                        onBack = navController::popBackStack,
+                        onCheckout = navController::navigateToCheckout,
+                        onSignIn = navController::navigateToSignIn,
+                    )
+                    checkoutScreens(
+                        navController,
+                        onSignIn = navController::navigateToSignIn,
+                        onBackToStorefront = { navController.popBackStack(StorefrontDestination, inclusive = false) },
+                    )
                     accountScreens(navController)
                 }
             }

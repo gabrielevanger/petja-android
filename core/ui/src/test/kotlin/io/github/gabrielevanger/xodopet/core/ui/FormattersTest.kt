@@ -31,4 +31,15 @@ class FormattersTest {
         assertEquals("https://wa.me/5595900000001", whatsappLink("+55 (95) 90000-0001"))
         assertEquals("tel:9530000001", phoneLink("(95) 3000-0001"))
     }
+
+    @Test
+    fun `reads typed money`() {
+        assertEquals(Money(10000), parseBrl("100"))
+        assertEquals(Money(10050), parseBrl("100,5"))
+        assertEquals(Money(10050), parseBrl(" R$ 100.50 "))
+        assertEquals(Money(7), parseBrl("0,07"))
+        assertEquals(null, parseBrl("1.000,00"))
+        assertEquals(null, parseBrl("cem"))
+        assertEquals(null, parseBrl(""))
+    }
 }

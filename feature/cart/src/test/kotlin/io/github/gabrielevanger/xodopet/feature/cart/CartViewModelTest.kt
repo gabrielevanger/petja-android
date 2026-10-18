@@ -1,11 +1,15 @@
 package io.github.gabrielevanger.xodopet.feature.cart
 
+import io.github.gabrielevanger.xodopet.core.domain.DiagnosticLog
+import io.github.gabrielevanger.xodopet.core.domain.account.AccountState
 import io.github.gabrielevanger.xodopet.core.domain.cart.CartActions
 import io.github.gabrielevanger.xodopet.core.domain.delivery.QuoteDelivery
 import io.github.gabrielevanger.xodopet.core.domain.model.Cart
 import io.github.gabrielevanger.xodopet.core.domain.model.CartLine
 import io.github.gabrielevanger.xodopet.core.domain.model.Money
+import io.github.gabrielevanger.xodopet.core.domain.testing.ANA
 import io.github.gabrielevanger.xodopet.core.domain.testing.CENTRO_PLACE
+import io.github.gabrielevanger.xodopet.core.domain.testing.FakeAccountRepository
 import io.github.gabrielevanger.xodopet.core.domain.testing.FakeCartRepository
 import io.github.gabrielevanger.xodopet.core.domain.testing.FakeDeliveryPlaceRepository
 import io.github.gabrielevanger.xodopet.core.domain.testing.FakeStorefrontRepository
@@ -35,6 +39,7 @@ class CartViewModelTest {
     private val places = FakeDeliveryPlaceRepository(CENTRO_PLACE)
     private val storefront = FakeStorefrontRepository(stores = listOf(aStore(id = "store-1", deliveryFeeCents = 500)))
     private val warnings = mutableListOf<String>()
+    private val accounts = FakeAccountRepository()
 
     @BeforeEach
     fun setUp() = Dispatchers.setMain(dispatcher)
@@ -42,12 +47,14 @@ class CartViewModelTest {
     @AfterEach
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun TestScope.viewModel() = CartViewModel(cart, places, QuoteDelivery(storefront), CartActions(cart)) {
-            message,
-            _,
-        ->
-        warnings += message
-    }.also { it.uiState.launchIn(backgroundScope) }
+    private fun TestScope.viewModel() = CartViewModel(
+        cart,
+        places,
+        QuoteDelivery(storefront),
+        CartActions(cart),
+        accounts,
+        DiagnosticLog { message, _ -> warnings += message },
+    ).also { it.uiState.launchIn(backgroundScope) }
 
     private fun CartViewModel.loaded() = assertInstanceOf(CartUiState.Loaded::class.java, uiState.value)
 
@@ -91,7 +98,18 @@ class CartViewModelTest {
     @Test
     fun `no place chosen yet`() = runTest(dispatcher) {
         val noPlace = FakeDeliveryPlaceRepository()
-        val viewModel = CartViewModel(cart, noPlace, QuoteDelivery(storefront), CartActions(cart)) { _, _ -> }
+        val viewModel = CartViewModel(
+            cart,
+            noPlace,
+            QuoteDelivery(storefront),
+            CartActions(cart),
+            accounts,
+            DiagnosticLog {
+                    _,
+                    _,
+                ->
+            },
+        )
             .also { it.uiState.launchIn(backgroundScope) }
         advanceUntilIdle()
 
@@ -128,5 +146,21 @@ class CartViewModelTest {
         advanceUntilIdle()
 
         assertEquals(CartUiState.Empty, viewModel.uiState.value)
+    }
+
+    @Test
+    fun `knows whether the customer is signed in`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        assertEquals(false, viewModel.loaded().signedIn)
+        assertEquals(false, viewModel.loaded().canCheckout, "abaixo do pedido mínimo")
+
+        accounts.signIn(ANA.email, "segredo123")
+        viewModel.increase("1kg", 1)
+        advanceUntilIdle()
+
+        assertEquals(true, viewModel.loaded().signedIn)
+        assertEquals(true, viewModel.loaded().canCheckout)
+        assertEquals(AccountState.SignedIn(ANA), accounts.state.value)
     }
 }

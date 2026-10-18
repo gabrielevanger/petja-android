@@ -50,7 +50,7 @@ class CartScreenTest {
         composeRule.onNodeWithText("R$ 5,00").assertExists()
         composeRule.onNodeWithText("R$ 35,90").assertExists()
         composeRule.onNodeWithText("Faltam R$ 19,10 para o pedido mínimo de R$ 50,00.").assertExists()
-        composeRule.onNodeWithText("Finalizar pedido").assertIsNotEnabled()
+        composeRule.onNodeWithText("Entrar para finalizar").assertIsNotEnabled()
     }
 
     @Test
@@ -78,5 +78,36 @@ class CartScreenTest {
         show(CartUiState.Empty)
 
         composeRule.onNodeWithText("Seu carrinho está vazio", substring = true).assertExists()
+    }
+
+    @Test
+    fun checkoutButtonSignsInOrContinues() {
+        var signIn = 0
+        var checkout = 0
+        val ready = loaded.copy(missingForMinOrder = null)
+        composeRule.setContent {
+            XodoTheme {
+                CartScreen(ready, {
+                }, { _, _ -> }, { _, _ -> }, {}, onCheckout = { checkout++ }, onSignIn = { signIn++ })
+            }
+        }
+
+        composeRule.onNodeWithText("Entrar para finalizar").performClick()
+        assertEquals(1, signIn)
+        assertEquals(0, checkout)
+    }
+
+    @Test
+    fun signedInGoesToCheckout() {
+        var checkout = 0
+        composeRule.setContent {
+            XodoTheme {
+                CartScreen(loaded.copy(missingForMinOrder = null, signedIn = true), {
+                }, { _, _ -> }, { _, _ -> }, {}, onCheckout = { checkout++ })
+            }
+        }
+
+        composeRule.onNodeWithText("Finalizar pedido").performClick()
+        assertEquals(1, checkout)
     }
 }
