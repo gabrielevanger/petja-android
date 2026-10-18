@@ -27,6 +27,8 @@ androidxTestRunner = "1.7.0"
 androidxTestCore = "1.7.0"
 robolectric = "4.17"
 ktlintGradle = "14.2.0"
+# Maven Central tem versões mais novas que o Gradle Plugin Portal; o build-logic usa o artefato direto.
+kover = "0.9.11"
 # Versão do motor do ktlint, fixada para o resultado não mudar com o plugin.
 ktlint = "1.8.0"
 
@@ -42,6 +44,7 @@ testJvm = "21"
 # Plugins do Gradle usados pelos plugins de convenção (build-logic)
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+kover-gradlePlugin = { group = "org.jetbrains.kotlinx", name = "kover-gradle-plugin", version.ref = "kover" }
 ktlint-gradlePlugin = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlintGradle" }
 
 # AndroidX

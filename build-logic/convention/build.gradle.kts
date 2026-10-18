@@ -21,6 +21,8 @@ dependencies {
     compileOnly(libs.android.gradlePlugin)
     compileOnly(libs.kotlin.gradlePlugin)
     compileOnly(libs.ktlint.gradlePlugin)
+    // implementation, e não compileOnly: nenhum outro build traz o Kover para o classpath dos projetos.
+    implementation(libs.kover.gradlePlugin)
 }
 
 gradlePlugin {
@@ -44,6 +46,10 @@ gradlePlugin {
         register("androidHilt") {
             id = "xodo.android.hilt"
             implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidHiltConventionPlugin"
+        }
+        register("koverAggregation") {
+            id = "xodo.kover.aggregation"
+            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.KoverAggregationConventionPlugin"
         }
         register("androidFeature") {
             id = "xodo.android.feature"

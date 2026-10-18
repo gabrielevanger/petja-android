@@ -11,6 +11,7 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             configureKotlinToolchain()
             configureUnitTests()
             configureKtlint()
+            configureKover(android = false)
         }
     }
 }

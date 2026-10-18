@@ -7,9 +7,21 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ktlint)
+    id("xodo.kover.aggregation")
 }
 
 // Aplicado na raiz para verificar também os scripts do Gradle deste diretório.
 ktlint {
     version.set(libs.versions.ktlint)
+}
+
+// Módulos que entram no relatório de cobertura (Kover). Módulo novo: incluir aqui.
+dependencies {
+    kover(projects.app)
+    kover(projects.core.domain)
+    kover(projects.core.data)
+    kover(projects.core.designsystem)
+    kover(projects.core.ui)
+    kover(projects.feature.storefront)
+    kover(projects.feature.store)
 }
