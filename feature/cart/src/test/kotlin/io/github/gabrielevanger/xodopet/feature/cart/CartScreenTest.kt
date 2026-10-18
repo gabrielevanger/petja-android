@@ -1,10 +1,13 @@
 package io.github.gabrielevanger.xodopet.feature.cart
 
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 import kotlinx.collections.immutable.persistentListOf
@@ -59,6 +62,9 @@ class CartScreenTest {
         var decreased: Pair<String, Int>? = null
         show(loaded, onIncrease = { id, q -> increased = id to q }, onDecrease = { id, q -> decreased = id to q })
 
+        // O resumo fixo embaixo ocupa parte da tela; a lista rola até o item antes do toque.
+        composeRule.onNode(hasScrollToNodeAction())
+            .performScrollToNode(hasContentDescription("Adicionar uma unidade de Ração Golden"))
         composeRule.onNodeWithContentDescription("Adicionar uma unidade de Ração Golden").performClick()
         composeRule.onNodeWithContentDescription("Remover Ração Golden do carrinho").performClick()
 
