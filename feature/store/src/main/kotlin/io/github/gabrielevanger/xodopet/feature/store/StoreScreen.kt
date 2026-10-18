@@ -5,26 +5,32 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +47,8 @@ import io.github.gabrielevanger.xodopet.core.designsystem.component.SectionTitle
 import io.github.gabrielevanger.xodopet.core.designsystem.component.StatusBadge
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 import io.github.gabrielevanger.xodopet.core.domain.model.PetSpecies
+import io.github.gabrielevanger.xodopet.core.ui.CartBar
+import io.github.gabrielevanger.xodopet.core.ui.CartBarUi
 import io.github.gabrielevanger.xodopet.core.ui.R as CoreUiR
 import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
 import kotlinx.coroutines.launch
@@ -52,14 +60,23 @@ private const val TOP_BAR_TITLE_MAX_LINES = 1
 private const val ITEMS_BEFORE_FIRST_SECTION = 1
 
 @Composable
-fun StoreRoute(onBack: () -> Unit, viewModel: StoreViewModel = hiltViewModel()) {
+fun StoreRoute(onBack: () -> Unit, onCartClick: () -> Unit, viewModel: StoreViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val cartBar by viewModel.cartBar.collectAsStateWithLifecycle()
+    val cartState by viewModel.cartState.collectAsStateWithLifecycle()
     StoreScreen(
         state = state,
         onBack = onBack,
         onRetry = viewModel::retry,
         onProductClick = viewModel::openProduct,
         onProductDismiss = viewModel::closeProduct,
+        cartBar = cartBar,
+        cartState = cartState,
+        onAddToCart = { viewModel.addToCart(it) },
+        onConfirmReplaceCart = viewModel::confirmReplaceCart,
+        onDismissReplaceCart = viewModel::dismissReplaceCart,
+        onMessageShown = viewModel::messageShown,
+        onCartClick = onCartClick,
     )
 }
 
@@ -70,9 +87,30 @@ fun StoreScreen(
     onRetry: () -> Unit,
     onProductClick: (productId: String) -> Unit,
     onProductDismiss: () -> Unit,
+    cartBar: CartBarUi? = null,
+    cartState: StoreCartState = StoreCartState(),
+    onAddToCart: (variantId: String) -> Unit = {},
+    onConfirmReplaceCart: () -> Unit = {},
+    onDismissReplaceCart: () -> Unit = {},
+    onMessageShown: () -> Unit = {},
+    onCartClick: () -> Unit = {},
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = XodoTheme.colors.background) {
-        Column(modifier = Modifier.safeDrawingPadding()) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    cartState.message?.let { message ->
+        val text = message.text()
+        LaunchedEffect(message) {
+            snackbarHostState.showSnackbar(text)
+            onMessageShown()
+        }
+    }
+    cartState.replacePrompt?.let { ReplaceCartDialog(it, onConfirmReplaceCart, onDismissReplaceCart) }
+
+    Scaffold(
+        containerColor = XodoTheme.colors.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = { cartBar?.let { CartBar(it, onClick = onCartClick) } },
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
             TopBar(title = (state as? StoreUiState.Loaded)?.header?.name, onBack = onBack)
             when (state) {
                 StoreUiState.Loading -> LoadingState(stringResource(R.string.store_loading))
@@ -87,7 +125,7 @@ fun StoreScreen(
 
                 is StoreUiState.Loaded -> {
                     Catalog(state, onProductClick)
-                    state.selectedProduct?.let { ProductSheet(it, onDismiss = onProductDismiss) }
+                    state.selectedProduct?.let { ProductSheet(it, onAdd = onAddToCart, onDismiss = onProductDismiss) }
                 }
             }
         }
@@ -245,7 +283,7 @@ private fun ProductRow(product: ProductRowUi, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ProductSheet(product: ProductDetailUi, onDismiss: () -> Unit) {
+private fun ProductSheet(product: ProductDetailUi, onAdd: (variantId: String) -> Unit, onDismiss: () -> Unit) {
     val spacing = XodoTheme.spacing
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(modifier = Modifier.padding(start = spacing.m, end = spacing.m, bottom = spacing.xl)) {
@@ -262,23 +300,22 @@ private fun ProductSheet(product: ProductDetailUi, onDismiss: () -> Unit) {
                 text = stringResource(R.string.store_options_title),
                 modifier = Modifier.padding(top = spacing.m, bottom = spacing.xxs),
             )
-            product.variants.forEach { variant -> VariantRow(variant) }
-            Text(
-                text = stringResource(R.string.store_cart_soon),
-                style = XodoTheme.typography.caption,
-                color = XodoTheme.colors.onSurfaceVariant,
-                modifier = Modifier.padding(top = spacing.m),
-            )
+            product.variants.forEach { variant -> VariantRow(variant, onAdd = { onAdd(variant.id) }) }
         }
     }
 }
 
 @Composable
-private fun VariantRow(variant: VariantUi) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = XodoTheme.spacing.xxs)) {
+private fun VariantRow(variant: VariantUi, onAdd: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(XodoTheme.spacing.s),
+        modifier = Modifier.fillMaxWidth().padding(vertical = XodoTheme.spacing.xxs),
+    ) {
         Text(text = variant.label, style = XodoTheme.typography.body, modifier = Modifier.weight(1f))
         if (variant.isAvailable) {
             Text(text = variant.price, style = XodoTheme.typography.price)
+            FilledTonalButton(onClick = onAdd) { Text(stringResource(R.string.store_add)) }
         } else {
             Text(
                 text = stringResource(R.string.store_unavailable),
@@ -301,3 +338,21 @@ private fun speciesLabel(species: PetSpecies): String = stringResource(
         PetSpecies.OTHER -> R.string.species_other
     },
 )
+
+@Composable
+private fun ReplaceCartDialog(prompt: ReplaceCartPrompt, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.store_replace_title)) },
+        text = { Text(stringResource(R.string.store_replace_text, prompt.currentStoreName)) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.store_replace_confirm)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.store_replace_dismiss)) } },
+    )
+}
+
+@Composable
+private fun StoreCartMessage.text(): String = when (this) {
+    is StoreCartMessage.Added -> stringResource(R.string.store_added, productName, variantLabel)
+    StoreCartMessage.LimitReached -> stringResource(R.string.store_limit_reached)
+    StoreCartMessage.Unavailable -> stringResource(R.string.store_option_unavailable)
+}

@@ -5,10 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -16,7 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,17 +31,23 @@ import io.github.gabrielevanger.xodopet.core.designsystem.component.LoadingState
 import io.github.gabrielevanger.xodopet.core.designsystem.component.SectionTitle
 import io.github.gabrielevanger.xodopet.core.designsystem.component.StatusBadge
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
+import io.github.gabrielevanger.xodopet.core.ui.CartBar
 import io.github.gabrielevanger.xodopet.core.ui.R as CoreUiR
 import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
 
 @Composable
-fun StorefrontRoute(onStoreClick: (storeId: String) -> Unit, viewModel: StorefrontViewModel = hiltViewModel()) {
+fun StorefrontRoute(
+    onStoreClick: (storeId: String) -> Unit,
+    onCartClick: () -> Unit,
+    viewModel: StorefrontViewModel = hiltViewModel(),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     StorefrontScreen(
         state = state,
         onSelectPlace = viewModel::selectPlace,
         onRetry = viewModel::retry,
         onStoreClick = onStoreClick,
+        onCartClick = onCartClick,
     )
 }
 
@@ -52,9 +57,13 @@ fun StorefrontScreen(
     onSelectPlace: (SamplePlace) -> Unit,
     onRetry: () -> Unit,
     onStoreClick: (storeId: String) -> Unit,
+    onCartClick: () -> Unit = {},
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = XodoTheme.colors.background) {
-        Column(modifier = Modifier.safeDrawingPadding()) {
+    Scaffold(
+        containerColor = XodoTheme.colors.background,
+        bottomBar = { state.cartBar?.let { CartBar(it, onClick = onCartClick) } },
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
             PlacePicker(state, onSelectPlace)
             when (val content = state.content) {
                 StorefrontContent.Loading -> LoadingState(stringResource(R.string.storefront_loading))

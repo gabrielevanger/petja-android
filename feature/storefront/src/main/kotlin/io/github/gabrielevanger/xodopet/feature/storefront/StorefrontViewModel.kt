@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.gabrielevanger.xodopet.core.domain.DiagnosticLog
+import io.github.gabrielevanger.xodopet.core.domain.cart.CartRepository
+import io.github.gabrielevanger.xodopet.core.domain.delivery.DeliveryPlaceRepository
+import io.github.gabrielevanger.xodopet.core.domain.model.DeliveryPlace
 import io.github.gabrielevanger.xodopet.core.domain.storefront.LoadStorefront
+import io.github.gabrielevanger.xodopet.core.ui.toCartBar
 import javax.inject.Inject
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
@@ -12,12 +16,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class StorefrontViewModel @Inject constructor(
     private val loadStorefront: LoadStorefront,
+    private val deliveryPlaces: DeliveryPlaceRepository,
+    cartRepository: CartRepository,
     private val log: DiagnosticLog,
 ) : ViewModel() {
 
@@ -32,7 +39,17 @@ class StorefrontViewModel @Inject constructor(
     private var loading: Job? = null
 
     init {
-        load(_uiState.value.selectedPlace)
+        // Volta ao lugar escolhido da última vez; sem escolha salva, começa pelo primeiro. Se o cliente
+        // tocar num lugar antes de a leitura terminar, a escolha dele vale e a leitura atrasada é ignorada.
+        viewModelScope.launch {
+            val saved = deliveryPlaces.place.first()
+            if (loading == null) {
+                load(BoaVistaSamplePlaces.firstOrNull { it.name == saved?.name } ?: BoaVistaSamplePlaces.first())
+            }
+        }
+        viewModelScope.launch {
+            cartRepository.cart.collect { cart -> _uiState.update { it.copy(cartBar = cart.toCartBar()) } }
+        }
     }
 
     fun selectPlace(place: SamplePlace) {
@@ -50,6 +67,7 @@ class StorefrontViewModel @Inject constructor(
         loading?.cancel()
         _uiState.update { it.copy(selectedPlace = place, content = StorefrontContent.Loading) }
         loading = viewModelScope.launch {
+            deliveryPlaces.set(DeliveryPlace(place.name, place.point))
             val content = try {
                 loadStorefront(place.point).toContent()
             } catch (e: CancellationException) {

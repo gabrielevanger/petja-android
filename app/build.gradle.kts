@@ -36,6 +36,7 @@ dependencies {
     implementation(projects.core.designsystem)
     implementation(projects.feature.storefront)
     implementation(projects.feature.store)
+    implementation(projects.feature.cart)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
