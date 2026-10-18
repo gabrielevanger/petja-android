@@ -10,6 +10,8 @@
     <string name="cart_bar_action">Ver carrinho</string>
     <plurals name="cart_bar_items">
         <item quantity="one">%1$d item</item>
+        <!-- "many" é a forma do português para números como 1 milhão ("1 milhão de itens"). -->
+        <item quantity="many">%1$d de itens</item>
         <item quantity="other">%1$d itens</item>
     </plurals>
 </resources>
