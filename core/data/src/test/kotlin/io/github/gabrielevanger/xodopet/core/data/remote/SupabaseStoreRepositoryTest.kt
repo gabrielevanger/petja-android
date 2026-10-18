@@ -1,6 +1,5 @@
 package io.github.gabrielevanger.xodopet.core.data.remote
 
-import io.github.gabrielevanger.xodopet.core.data.SupabaseConfig
 import io.github.gabrielevanger.xodopet.core.domain.model.Money
 import io.github.gabrielevanger.xodopet.core.domain.model.PetSpecies
 import io.ktor.client.engine.mock.MockEngine
@@ -19,8 +18,7 @@ class SupabaseStoreRepositoryTest {
     private val requests = mutableListOf<HttpRequestData>()
 
     private fun repository(body: String) = SupabaseStoreRepository(
-        createXodoSupabaseClient(
-            SupabaseConfig("https://teste.supabase.co", "chave-anon"),
+        testSupabaseClient(
             MockEngine { request ->
                 requests += request
                 respond(body, headers = headersOf(HttpHeaders.ContentType, "application/json"))

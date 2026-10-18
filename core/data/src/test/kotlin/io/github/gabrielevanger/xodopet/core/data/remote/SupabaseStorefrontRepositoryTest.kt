@@ -1,6 +1,5 @@
 package io.github.gabrielevanger.xodopet.core.data.remote
 
-import io.github.gabrielevanger.xodopet.core.data.SupabaseConfig
 import io.github.gabrielevanger.xodopet.core.domain.model.GeoPoint
 import io.github.gabrielevanger.xodopet.core.domain.model.Money
 import io.github.gabrielevanger.xodopet.core.domain.testing.CENTRO
@@ -29,8 +28,7 @@ class SupabaseStorefrontRepositoryTest {
     private fun repository(
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> io.ktor.client.request.HttpResponseData,
     ) = SupabaseStorefrontRepository(
-        createXodoSupabaseClient(
-            SupabaseConfig("https://teste.supabase.co", "chave-anon"),
+        testSupabaseClient(
             MockEngine { request ->
                 requests += request to String(request.body.toByteArray())
                 handler(request)
