@@ -2,11 +2,13 @@ package io.github.gabrielevanger.xodopet.feature.storemode
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
@@ -81,8 +83,10 @@ class StoreModeScreenTest {
         composeRule.onNode(hasText("Não foi possível entregar") and hasClickAction()).performScrollTo()
             .assertIsNotEnabled()
         composeRule.onNodeWithText("Pix na entrega").assertExists()
-        composeRule.onNodeWithText("Encerrados nas últimas 24 horas").performScrollTo().assertExists()
-        composeRule.onNodeWithText("Cartão na maquininha").performScrollTo().assertExists()
+        // A lista é preguiçosa: o que está lá embaixo só existe depois de a lista rolar até ele.
+        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Cartão na maquininha"))
+        composeRule.onNodeWithText("Encerrados nas últimas 24 horas").assertExists()
+        composeRule.onNodeWithText("Cartão na maquininha").assertExists()
     }
 
     @Test

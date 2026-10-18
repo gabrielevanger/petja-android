@@ -13,7 +13,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
@@ -75,7 +74,7 @@ class StoreModeViewModelTest {
         advanceUntilIdle()
 
         viewModel.act(viewModel.loaded().orders.single(), StoreAction.Accept)
-        runCurrent()
+        // Trava os botões na hora do toque, antes de o servidor responder.
         assertEquals("pedido-1", viewModel.loaded().working)
         advanceUntilIdle()
 
