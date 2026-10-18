@@ -1,6 +1,7 @@
 package io.github.gabrielevanger.xodopet.feature.store
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import io.github.gabrielevanger.xodopet.core.domain.cart.CartActions
 import io.github.gabrielevanger.xodopet.core.domain.model.Cart
 import io.github.gabrielevanger.xodopet.core.domain.model.CartLine
@@ -46,21 +47,24 @@ class StoreViewModelTest {
 
     private val cart = FakeCartRepository()
 
+    /** Como a tela faz: o ViewModel só carrega quando a tela manda OnStart. */
     private fun viewModel(storeId: String = "store-1") = StoreViewModel(
         SavedStateHandle(mapOf(STORE_ID_ARG to storeId)),
         LoadStoreCatalog(repository),
         CartActions(cart),
         cart,
-    ) { message, _ -> warnings += message }
+    ) { message, _ -> warnings += message }.apply { onAction(StoreAction.OnStart) }
+
+    private fun StoreViewModel.content() = uiState.value.content
 
     @Test
     fun `loads the store from the route argument`() = runTest(dispatcher) {
         val viewModel = viewModel()
-        assertEquals(StoreUiState.Loading, viewModel.uiState.value)
+        assertEquals(StoreContent.Loading, viewModel.content())
 
         advanceUntilIdle()
 
-        val state = assertInstanceOf(StoreUiState.Loaded::class.java, viewModel.uiState.value)
+        val state = assertInstanceOf(StoreContent.Loaded::class.java, viewModel.content())
         assertEquals("Petshop Lavrado", state.header.name)
         assertEquals(listOf("Ração"), state.sections.map { it.title })
     }
@@ -70,7 +74,7 @@ class StoreViewModelTest {
         val viewModel = viewModel(storeId = "sumiu")
         advanceUntilIdle()
 
-        assertEquals(StoreUiState.NotFound, viewModel.uiState.value)
+        assertEquals(StoreContent.NotFound, viewModel.content())
         assertEquals(1, warnings.size)
     }
 
@@ -79,13 +83,13 @@ class StoreViewModelTest {
         repository.failWith = IOException("sem rede")
         val viewModel = viewModel()
         advanceUntilIdle()
-        assertEquals(StoreUiState.Error, viewModel.uiState.value)
+        assertEquals(StoreContent.Error, viewModel.content())
         assertEquals(1, warnings.size)
 
-        viewModel.retry()
+        viewModel.onAction(StoreAction.OnRetryClick)
         advanceUntilIdle()
 
-        assertInstanceOf(StoreUiState.Loaded::class.java, viewModel.uiState.value)
+        assertInstanceOf(StoreContent.Loaded::class.java, viewModel.content())
     }
 
     @Test
@@ -93,12 +97,12 @@ class StoreViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.openProduct("golden")
-        val opened = assertInstanceOf(StoreUiState.Loaded::class.java, viewModel.uiState.value)
+        viewModel.onAction(StoreAction.OnProductClick("golden"))
+        val opened = assertInstanceOf(StoreContent.Loaded::class.java, viewModel.content())
         assertEquals(listOf("1 kg", "15 kg"), opened.selectedProduct?.variants?.map { it.label })
 
-        viewModel.closeProduct()
-        assertNull((viewModel.uiState.value as StoreUiState.Loaded).selectedProduct)
+        viewModel.onAction(StoreAction.OnProductDismiss)
+        assertNull((viewModel.content() as StoreContent.Loaded).selectedProduct)
     }
 
     @Test
@@ -106,26 +110,48 @@ class StoreViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.openProduct("nao-existe")
+        viewModel.onAction(StoreAction.OnProductClick("nao-existe"))
 
-        assertNull((viewModel.uiState.value as StoreUiState.Loaded).selectedProduct)
+        assertNull((viewModel.content() as StoreContent.Loaded).selectedProduct)
     }
 
     @Test
     fun `adding an option puts it in the cart, closes the sheet and confirms`() = runTest(dispatcher) {
         val viewModel = viewModel()
         advanceUntilIdle()
-        viewModel.openProduct("golden")
+        viewModel.onAction(StoreAction.OnProductClick("golden"))
 
-        viewModel.addToCart("15kg")
+        viewModel.events.test {
+            viewModel.onAction(StoreAction.OnAddToCart("15kg"))
+            advanceUntilIdle()
+            assertEquals(StoreEvent.ShowMessage(StoreCartMessage.Added("Ração Golden Adultos", "15 kg")), awaitItem())
+        }
+        assertEquals(listOf("15kg"), cart.cart.value?.lines?.map { it.variantId })
+        assertNull((viewModel.content() as StoreContent.Loaded).selectedProduct)
+        assertEquals("Petshop Lavrado", viewModel.uiState.value.cartBar?.storeName, "a barra do carrinho acompanha")
+    }
+
+    @Test
+    fun `back and cart clicks become events, and stop pauses the cart`() = runTest(dispatcher) {
+        val viewModel = viewModel()
         advanceUntilIdle()
 
-        assertEquals(listOf("15kg"), cart.cart.value?.lines?.map { it.variantId })
-        assertNull((viewModel.uiState.value as StoreUiState.Loaded).selectedProduct)
-        assertEquals(StoreCartMessage.Added("Ração Golden Adultos", "15 kg"), viewModel.cartState.value.message)
+        viewModel.events.test {
+            viewModel.onAction(StoreAction.OnBackClick)
+            assertEquals(StoreEvent.Close, awaitItem())
+            viewModel.onAction(StoreAction.OnCartClick)
+            assertEquals(StoreEvent.OpenCart, awaitItem())
+        }
 
-        viewModel.messageShown()
-        assertNull(viewModel.cartState.value.message)
+        viewModel.onAction(StoreAction.OnStop)
+        cart.update { Cart("outra", "Casa do Bicho", Money(0), listOf(aCartLine())) }
+        advanceUntilIdle()
+        assertNull(viewModel.uiState.value.cartBar, "parada, a tela não ouve o carrinho")
+
+        viewModel.onAction(StoreAction.OnStart)
+        advanceUntilIdle()
+        assertEquals("Casa do Bicho", viewModel.uiState.value.cartBar?.storeName)
+        assertEquals(1, repository.catalogCalls, "voltar para a tela não carrega o catálogo de novo")
     }
 
     @Test
@@ -134,14 +160,14 @@ class StoreViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.addToCart("1kg")
+        viewModel.onAction(StoreAction.OnAddToCart("1kg"))
         advanceUntilIdle()
-        assertEquals(ReplaceCartPrompt("Casa do Bicho", "1kg"), viewModel.cartState.value.replacePrompt)
+        assertEquals(ReplaceCartPrompt("Casa do Bicho", "1kg"), viewModel.uiState.value.replacePrompt)
         assertEquals("outra", cart.cart.value?.storeId)
 
-        viewModel.confirmReplaceCart()
+        viewModel.onAction(StoreAction.OnConfirmReplaceCart)
         advanceUntilIdle()
-        assertNull(viewModel.cartState.value.replacePrompt)
+        assertNull(viewModel.uiState.value.replacePrompt)
         assertEquals("store-1", cart.cart.value?.storeId)
     }
 
@@ -151,11 +177,11 @@ class StoreViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.addToCart("1kg")
+        viewModel.onAction(StoreAction.OnAddToCart("1kg"))
         advanceUntilIdle()
-        viewModel.dismissReplaceCart()
+        viewModel.onAction(StoreAction.OnDismissReplaceCart)
 
-        assertNull(viewModel.cartState.value.replacePrompt)
+        assertNull(viewModel.uiState.value.replacePrompt)
         assertEquals("outra", cart.cart.value?.storeId)
     }
 

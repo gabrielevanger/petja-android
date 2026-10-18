@@ -2,23 +2,40 @@ package io.github.gabrielevanger.xodopet.feature.store
 
 import androidx.compose.runtime.Immutable
 import io.github.gabrielevanger.xodopet.core.domain.model.PetSpecies
+import io.github.gabrielevanger.xodopet.core.ui.CartBarUi
 import kotlinx.collections.immutable.ImmutableList
 
+/**
+ * Tudo o que a página da loja mostra num estado só.
+ *
+ * @property cartBar resumo do carrinho para a barra de baixo; null quando vazio.
+ * @property replacePrompt pergunta antes de trocar o carrinho de outra loja por este (RF-41).
+ */
 @Immutable
-sealed interface StoreUiState {
-    data object Loading : StoreUiState
+data class StoreUiState(
+    val content: StoreContent = StoreContent.Loading,
+    val cartBar: CartBarUi? = null,
+    val replacePrompt: ReplaceCartPrompt? = null,
+)
 
-    data object Error : StoreUiState
+@Immutable
+sealed interface StoreContent {
+    data object Loading : StoreContent
+
+    data object Error : StoreContent
 
     /** Loja desativada, removida ou link antigo. */
-    data object NotFound : StoreUiState
+    data object NotFound : StoreContent
 
     data class Loaded(
         val header: StoreHeaderUi,
         val sections: ImmutableList<CatalogSectionUi>,
         val selectedProduct: ProductDetailUi? = null,
-    ) : StoreUiState
+    ) : StoreContent
 }
+
+@Immutable
+data class ReplaceCartPrompt(val currentStoreName: String, val variantId: String)
 
 @Immutable
 data class StoreHeaderUi(

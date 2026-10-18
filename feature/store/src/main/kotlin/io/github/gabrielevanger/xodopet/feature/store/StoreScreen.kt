@@ -30,13 +30,17 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gabrielevanger.xodopet.core.designsystem.component.BadgeTone
 import io.github.gabrielevanger.xodopet.core.designsystem.component.ErrorState
@@ -48,7 +52,7 @@ import io.github.gabrielevanger.xodopet.core.designsystem.component.StatusBadge
 import io.github.gabrielevanger.xodopet.core.designsystem.theme.XodoTheme
 import io.github.gabrielevanger.xodopet.core.domain.model.PetSpecies
 import io.github.gabrielevanger.xodopet.core.ui.CartBar
-import io.github.gabrielevanger.xodopet.core.ui.CartBarUi
+import io.github.gabrielevanger.xodopet.core.ui.CollectEvents
 import io.github.gabrielevanger.xodopet.core.ui.R as CoreUiR
 import io.github.gabrielevanger.xodopet.core.ui.dotSeparated
 import kotlinx.coroutines.launch
@@ -62,70 +66,73 @@ private const val ITEMS_BEFORE_FIRST_SECTION = 1
 @Composable
 fun StoreRoute(onBack: () -> Unit, onCartClick: () -> Unit, viewModel: StoreViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val cartBar by viewModel.cartBar.collectAsStateWithLifecycle()
-    val cartState by viewModel.cartState.collectAsStateWithLifecycle()
-    StoreScreen(
-        state = state,
-        onBack = onBack,
-        onRetry = viewModel::retry,
-        onProductClick = viewModel::openProduct,
-        onProductDismiss = viewModel::closeProduct,
-        cartBar = cartBar,
-        cartState = cartState,
-        onAddToCart = { viewModel.addToCart(it) },
-        onConfirmReplaceCart = viewModel::confirmReplaceCart,
-        onDismissReplaceCart = viewModel::dismissReplaceCart,
-        onMessageShown = viewModel::messageShown,
-        onCartClick = onCartClick,
-    )
+    // O aviso chega como evento e fica aqui até o snackbar terminar de mostrar.
+    var message by remember { mutableStateOf<StoreCartMessage?>(null) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onAction(StoreAction.OnStart) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onAction(StoreAction.OnStop) }
+    CollectEvents(viewModel.events) { event ->
+        when (event) {
+            StoreEvent.Close -> onBack()
+            StoreEvent.OpenCart -> onCartClick()
+            is StoreEvent.ShowMessage -> message = event.message
+        }
+    }
+    StoreScreen(state, viewModel::onAction, message = message, onMessageShown = { message = null })
 }
 
 @Composable
 fun StoreScreen(
     state: StoreUiState,
-    onBack: () -> Unit,
-    onRetry: () -> Unit,
-    onProductClick: (productId: String) -> Unit,
-    onProductDismiss: () -> Unit,
-    cartBar: CartBarUi? = null,
-    cartState: StoreCartState = StoreCartState(),
-    onAddToCart: (variantId: String) -> Unit = {},
-    onConfirmReplaceCart: () -> Unit = {},
-    onDismissReplaceCart: () -> Unit = {},
+    onAction: (StoreAction) -> Unit,
+    message: StoreCartMessage? = null,
     onMessageShown: () -> Unit = {},
-    onCartClick: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    cartState.message?.let { message ->
+    message?.let { message ->
         val text = message.text()
         LaunchedEffect(message) {
             snackbarHostState.showSnackbar(text)
             onMessageShown()
         }
     }
-    cartState.replacePrompt?.let { ReplaceCartDialog(it, onConfirmReplaceCart, onDismissReplaceCart) }
+    state.replacePrompt?.let {
+        ReplaceCartDialog(
+            it,
+            onConfirm = { onAction(StoreAction.OnConfirmReplaceCart) },
+            onDismiss = { onAction(StoreAction.OnDismissReplaceCart) },
+        )
+    }
 
     Scaffold(
         containerColor = XodoTheme.colors.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = { cartBar?.let { CartBar(it, onClick = onCartClick) } },
+        bottomBar = { state.cartBar?.let { CartBar(it, onClick = { onAction(StoreAction.OnCartClick) }) } },
     ) { padding ->
         Column(modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
-            TopBar(title = (state as? StoreUiState.Loaded)?.header?.name, onBack = onBack)
-            when (state) {
-                StoreUiState.Loading -> LoadingState(stringResource(R.string.store_loading))
+            val content = state.content
+            TopBar(title = (content as? StoreContent.Loaded)?.header?.name, onBack = {
+                onAction(StoreAction.OnBackClick)
+            })
+            when (content) {
+                StoreContent.Loading -> LoadingState(stringResource(R.string.store_loading))
 
-                StoreUiState.Error -> ErrorState(
+                StoreContent.Error -> ErrorState(
                     message = stringResource(R.string.store_error),
                     actionLabel = stringResource(CoreUiR.string.common_retry),
-                    onAction = onRetry,
+                    onAction = { onAction(StoreAction.OnRetryClick) },
                 )
 
-                StoreUiState.NotFound -> MessageState(stringResource(R.string.store_not_found))
+                StoreContent.NotFound -> MessageState(stringResource(R.string.store_not_found))
 
-                is StoreUiState.Loaded -> {
-                    Catalog(state, onProductClick)
-                    state.selectedProduct?.let { ProductSheet(it, onAdd = onAddToCart, onDismiss = onProductDismiss) }
+                is StoreContent.Loaded -> {
+                    Catalog(content) { onAction(StoreAction.OnProductClick(it)) }
+                    content.selectedProduct?.let {
+                        ProductSheet(
+                            it,
+                            onAdd = { variantId -> onAction(StoreAction.OnAddToCart(variantId)) },
+                            onDismiss = { onAction(StoreAction.OnProductDismiss) },
+                        )
+                    }
                 }
             }
         }
@@ -150,7 +157,7 @@ private fun TopBar(title: String?, onBack: () -> Unit) {
 }
 
 @Composable
-private fun Catalog(state: StoreUiState.Loaded, onProductClick: (String) -> Unit) {
+private fun Catalog(state: StoreContent.Loaded, onProductClick: (String) -> Unit) {
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // Posição do título de cada seção na lista: depois do cabeçalho da loja, título + produtos de cada seção.
@@ -181,7 +188,7 @@ private fun CategoryChips(sections: List<CatalogSectionUi>, onClick: (position: 
 }
 
 @Composable
-private fun CatalogList(state: StoreUiState.Loaded, listState: LazyListState, onProductClick: (String) -> Unit) {
+private fun CatalogList(state: StoreContent.Loaded, listState: LazyListState, onProductClick: (String) -> Unit) {
     val spacing = XodoTheme.spacing
     LazyColumn(state = listState, contentPadding = PaddingValues(bottom = spacing.xl)) {
         item(key = "header") { StoreHeader(state.header) }

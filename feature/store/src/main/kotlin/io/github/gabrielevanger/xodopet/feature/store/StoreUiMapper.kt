@@ -7,7 +7,7 @@ import io.github.gabrielevanger.xodopet.core.domain.store.StoreCatalog
 import io.github.gabrielevanger.xodopet.core.ui.formatBrl
 import kotlinx.collections.immutable.toImmutableList
 
-internal fun StoreCatalog.toUiState() = StoreUiState.Loaded(
+internal fun StoreCatalog.toContent() = StoreContent.Loaded(
     header = store.toHeader(),
     sections = sections.map { section ->
         CatalogSectionUi(
