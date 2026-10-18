@@ -1,5 +1,7 @@
 package io.github.gabrielevanger.xodopet.feature.storemode
 
+import androidx.compose.ui.semantics.SemanticsProperties.VerticalScrollAxisRange
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollToNodeAction
@@ -84,7 +86,9 @@ class StoreModeScreenTest {
             .assertIsNotEnabled()
         composeRule.onNodeWithText("Pix na entrega").assertExists()
         // A lista é preguiçosa: o que está lá embaixo só existe depois de a lista rolar até ele.
-        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Cartão na maquininha"))
+        // Com duas lojas há também a fileira de chips, que rola na horizontal: a lista é a vertical.
+        composeRule.onNode(hasScrollToNodeAction() and SemanticsMatcher.keyIsDefined(VerticalScrollAxisRange))
+            .performScrollToNode(hasText("Cartão na maquininha"))
         composeRule.onNodeWithText("Encerrados nas últimas 24 horas").assertExists()
         composeRule.onNodeWithText("Cartão na maquininha").assertExists()
     }
