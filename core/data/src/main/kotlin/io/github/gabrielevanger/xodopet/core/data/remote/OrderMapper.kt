@@ -33,6 +33,15 @@ internal fun OrderSummaryDto.toDomain() = OrderSummary(
     createdAt = parseTimestamp(createdAt),
 )
 
+/** Pending -> pending, OutForDelivery -> out_for_delivery: o nome do enum no banco. */
+internal fun OrderStatus.toDbValue(): String = name.replace(Regex("(?<=[a-z])(?=[A-Z])"), "_").lowercase()
+
+internal fun parsePayment(method: String, changeForCents: Long?): PaymentChoice = when (method) {
+    "pix_on_delivery" -> PaymentChoice.PixOnDelivery
+    "card_on_delivery" -> PaymentChoice.CardOnDelivery
+    else -> PaymentChoice.Cash(changeForCents?.let(::Money))
+}
+
 internal fun OrderDetailsDto.toDomain() = OrderDetails(
     id = id,
     number = number,
@@ -47,11 +56,7 @@ internal fun OrderDetailsDto.toDomain() = OrderDetails(
     subtotal = Money(subtotalCents),
     deliveryFee = Money(deliveryFeeCents),
     total = Money(totalCents),
-    payment = when (paymentMethod) {
-        "pix_on_delivery" -> PaymentChoice.PixOnDelivery
-        "card_on_delivery" -> PaymentChoice.CardOnDelivery
-        else -> PaymentChoice.Cash(changeForCents?.let(::Money))
-    },
+    payment = parsePayment(paymentMethod, changeForCents),
     notes = notes,
     address = OrderAddress(street, numberAddress, complement, neighborhood, reference),
     courierName = courierName,

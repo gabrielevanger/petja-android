@@ -11,6 +11,7 @@ import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseAccountReposito
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseAuthLinkHandler
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseCheckoutRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseOrderRepository
+import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStoreOrderRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStoreRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.SupabaseStorefrontRepository
 import io.github.gabrielevanger.xodopet.core.data.remote.createXodoSupabaseClient
@@ -28,6 +29,7 @@ import io.github.gabrielevanger.xodopet.core.domain.store.LoadStoreCatalog
 import io.github.gabrielevanger.xodopet.core.domain.store.StoreRepository
 import io.github.gabrielevanger.xodopet.core.domain.storefront.LoadStorefront
 import io.github.gabrielevanger.xodopet.core.domain.storefront.StorefrontRepository
+import io.github.gabrielevanger.xodopet.core.domain.storemode.StoreOrderRepository
 import io.github.jan.supabase.SupabaseClient
 import io.ktor.client.engine.okhttp.OkHttp
 import javax.inject.Singleton
@@ -54,6 +56,9 @@ internal abstract class DataModule {
 
     @Binds
     abstract fun orderRepository(impl: SupabaseOrderRepository): OrderRepository
+
+    @Binds
+    abstract fun storeOrderRepository(impl: SupabaseStoreOrderRepository): StoreOrderRepository
 
     @Binds
     abstract fun diagnosticLog(impl: LogcatDiagnosticLog): DiagnosticLog
