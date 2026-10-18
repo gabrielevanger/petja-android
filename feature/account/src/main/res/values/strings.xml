@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt">
-    <string name="account_title">Sua conta</string>
+    <string name="account_title">Conta</string>
     <string name="account_signed_out_text">Entre para fazer pedidos e acompanhar as entregas. Para ver as lojas, não precisa de conta.</string>
     <string name="account_sign_in">Entrar</string>
     <string name="account_sign_up">Criar conta</string>
