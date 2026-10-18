@@ -6,7 +6,10 @@
     <string name="orders_error">Não foi possível carregar os pedidos. Confira a internet e tente de novo.</string>
     <string name="order_sign_in">Entrar</string>
     <string name="orders_not_signed_in">Entre na sua conta para ver os pedidos.</string>
-    <string name="orders_number_store">Pedido #%1$d · %2$s</string>
+    <string name="orders_headline">Cada pedido,\num cuidado.</string>
+    <string name="orders_active_title">Em andamento</string>
+    <string name="orders_past_title">Anteriores</string>
+    <string name="orders_number_store">#%1$d · %2$s</string>
     <plurals name="orders_items">
         <item quantity="one">%1$d item</item>
         <item quantity="many">%1$d de itens</item>
@@ -17,24 +20,20 @@
     <string name="order_loading">Carregando o pedido</string>
     <string name="order_not_found">Pedido não encontrado.</string>
     <string name="order_error">Não foi possível carregar o pedido. Confira a internet e tente de novo.</string>
-    <string name="order_from_store">Na %1$s, feito em %2$s</string>
     <string name="order_live">Atualiza sozinho quando a loja mudar o status.</string>
     <string name="order_timeline_title">Andamento</string>
     <string name="order_items_title">Itens</string>
-    <string name="order_item_line">%1$d× %2$s</string>
-    <string name="order_values_title">Valores</string>
-    <string name="order_subtotal">Subtotal</string>
+    <string name="order_item_line">%1$d× %2$s %3$s</string>
     <string name="order_delivery">Entrega</string>
     <string name="order_delivery_free">Grátis</string>
     <string name="order_total">Total</string>
-    <string name="order_payment_title">Pagamento na entrega</string>
+    <string name="order_delivery_payment_title">Entrega e pagamento</string>
     <string name="order_payment_cash">Dinheiro</string>
-    <string name="order_payment_cash_change">Dinheiro, troco para %1$s</string>
+    <string name="order_payment_cash_change">Dinheiro · troco para %1$s</string>
     <string name="order_payment_pix">Pix na entrega</string>
     <string name="order_payment_card">Cartão na maquininha</string>
-    <string name="order_address_title">Entregar em</string>
     <string name="order_address_line">%1$s, %2$s</string>
-    <string name="order_notes_title">Observação</string>
+    <string name="order_notes_line">Observação: %1$s</string>
     <string name="order_courier">Entregador: %1$s</string>
 
     <string name="order_cancel">Cancelar pedido</string>
@@ -57,4 +56,13 @@
     <string name="status_not_delivered">Não entregue</string>
     <string name="status_rejected">Recusado pela loja</string>
     <string name="status_canceled">Cancelado</string>
+
+    <string name="headline_pending">Aguardando\na loja aceitar.</string>
+    <string name="headline_accepted">A loja aceitou\nseu pedido.</string>
+    <string name="headline_preparing">Seu pedido está\nsendo preparado.</string>
+    <string name="headline_out_for_delivery">Seu pedido está\na caminho.</string>
+    <string name="headline_delivered">Pedido entregue.\nBom proveito!</string>
+    <string name="headline_not_delivered">Não foi possível\nentregar.</string>
+    <string name="headline_rejected">A loja recusou\no pedido.</string>
+    <string name="headline_canceled">Pedido\ncancelado.</string>
 </resources>
