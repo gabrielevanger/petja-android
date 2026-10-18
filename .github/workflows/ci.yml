@@ -34,6 +34,9 @@ jobs:
       - name: Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Tokens da interface (sem medidas, cores e textos soltos nas telas)
+        run: scripts/check-ui-tokens.sh
+
       - name: Análise estática (ktlint e Android Lint)
         run: ./gradlew ktlintCheck :build-logic:convention:ktlintCheck :app:lintDebug
 
