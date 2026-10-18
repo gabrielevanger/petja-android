@@ -55,7 +55,7 @@ fun Project.minimumCoverage(lines: Int, branches: Int? = null) {
     }
 }
 
-/** Código gerado ou só de ligação: não tem regra para testar e distorce a porcentagem. */
+/** Código gerado, de ligação ou de teste: não tem regra do app para testar e distorce a porcentagem. */
 internal fun KoverReportFiltersConfig.excludeGeneratedCode() {
     excludes {
         classes(
@@ -84,8 +84,9 @@ internal fun KoverReportFiltersConfig.excludeGeneratedCode() {
             "*Destination$*",
         )
         // Injeção e app (Activity, Application) só ligam as peças; DTOs só espelham o JSON, e os ramos
-        // deles são do código que o kotlinx.serialization gera dentro da própria classe.
-        packages("*.di", "*.app", "*.dto")
+        // deles são do código que o kotlinx.serialization gera dentro da própria classe. Os fakes de
+        // testFixtures (pacote testing) são código de teste, não do app.
+        packages("*.di", "*.app", "*.dto", "*.testing")
         annotatedBy(
             "androidx.compose.ui.tooling.preview.Preview",
             "dagger.Module",
