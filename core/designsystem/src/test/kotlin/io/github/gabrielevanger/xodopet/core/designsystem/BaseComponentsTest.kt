@@ -14,7 +14,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.gabrielevanger.xodopet.core.designsystem.component.BottomBarItem
+import io.github.gabrielevanger.xodopet.core.designsystem.component.IconTile
+import io.github.gabrielevanger.xodopet.core.designsystem.component.ProductThumbnail
 import io.github.gabrielevanger.xodopet.core.designsystem.component.SelectableOption
+import io.github.gabrielevanger.xodopet.core.designsystem.component.SuccessIllustration
 import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoBottomBar
 import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButton
 import io.github.gabrielevanger.xodopet.core.designsystem.component.XodoButtonStyle
@@ -130,5 +133,22 @@ class BaseComponentsTest {
         composeRule.onNodeWithText("Vitrine").assertIsSelected()
         composeRule.onNodeWithText("Pedidos").assertIsNotSelected().performClick()
         assertEquals("Pedidos", opened)
+    }
+
+    @Test
+    fun decorativePiecesDrawWithoutText() {
+        composeRule.setContent {
+            XodoTheme {
+                Column {
+                    IconTile(painterResource(R.drawable.ic_store))
+                    ProductThumbnail()
+                    SuccessIllustration(painterResource(R.drawable.ic_shopping_bag))
+                    Text("Pedido enviado")
+                }
+            }
+        }
+
+        // Ícones decorativos não aparecem para o TalkBack; o texto ao lado é que conta.
+        composeRule.onNodeWithText("Pedido enviado").assertExists()
     }
 }
