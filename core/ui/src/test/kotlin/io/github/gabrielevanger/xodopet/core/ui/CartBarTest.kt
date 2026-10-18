@@ -58,4 +58,11 @@ class CartBarTest {
         )
         assertNull((null as Cart?).toCartBar())
     }
+
+    @Test
+    fun dateTimeUsesThePatternFromResources() {
+        composeRule.setContent { XodoTheme { Text(formatDateTime(java.time.Instant.parse("2026-10-18T14:15:00Z"))) } }
+
+        composeRule.onNodeWithText(" às ", substring = true).assertExists()
+    }
 }
