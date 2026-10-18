@@ -1,7 +1,9 @@
 # Como trabalhar neste repositório
 
-Mesmas práticas do [KDS Brasa do Jorge](https://github.com/gabrielevanger/kds-brasa-do-jorge): passos pequenos,
-cada mudança ligada a uma issue e a `main` sempre verde.
+O fluxo segue padrões consolidados no mercado: [GitHub Flow](https://docs.github.com/pt/get-started/using-github/github-flow)
+(branches curtas a partir da `main`, integradas por pull request), [Conventional Commits](https://www.conventionalcommits.org/pt-br/v1.0.0/)
+nas mensagens e integração contínua obrigatória antes do merge. Na prática: passos pequenos, cada mudança ligada
+a uma issue e a `main` sempre verde.
 
 ## Fluxo
 

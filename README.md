@@ -12,7 +12,7 @@ Projeto pessoal, por enquanto com dados fictícios.
 
 ## Estrutura
 
-Mesma organização do [KDS Brasa do Jorge](https://github.com/gabrielevanger/kds-brasa-do-jorge):
+Modularização por camada e por funcionalidade, como recomenda o [guia de modularização do Android](https://developer.android.com/topic/modularization):
 
 ```
 app .................. MainActivity, configuração do Supabase

@@ -1,5 +1,5 @@
 [versions]
-# Base copiada do KDS Brasa do Jorge (validada em 28/09/2026), mais supabase-kt e Ktor.
+# Versões validadas em 28/09/2026, mais supabase-kt e Ktor.
 # AGP 9 traz o Kotlin embutido: o KGP é fixado pela versão dos plugins
 # kotlin-compose e kotlin-serialization abaixo.
 agp = "9.4.1"
