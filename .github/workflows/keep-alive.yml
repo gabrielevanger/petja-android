@@ -1,0 +1,32 @@
+# Mantém o projeto do Supabase ativo: no plano grátis ele pausa depois de 7 dias sem uso.
+# A cada 3 dias faz uma leitura simples pela API pública (a mesma que o app usa, com a chave
+# anônima), o que conta como uso. Não grava nada.
+name: Manter o Supabase ativo
+
+on:
+  schedule:
+    - cron: "17 12 */3 * *" # a cada 3 dias, 08:17 em Boa Vista
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    name: Ler a lista de lojas
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consulta na API do Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          status=$(curl --silent --show-error --output /dev/null --write-out "%{http_code}" \
+            --retry 3 --retry-delay 10 \
+            "$SUPABASE_URL/rest/v1/stores?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          echo "Resposta do Supabase: $status"
+          # Diferente de 200: o projeto pode já estar pausado. Falhar avisa por e-mail do GitHub.
+          test "$status" = "200"
