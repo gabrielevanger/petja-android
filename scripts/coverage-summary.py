@@ -12,11 +12,11 @@ import os
 import sys
 import xml.etree.ElementTree as ET
 
-BASE_PACKAGE = "io/github/gabrielevanger/xodopet/"
+BASE_PACKAGE = "io/github/gabrielevanger/petja/"
 # Profundidade do pacote que identifica o módulo: core/domain, feature/store...
 MODULE_DEPTH = 2
 # Marca invisível que o CI usa para achar e atualizar o comentário do PR em vez de criar outro.
-COMMENT_MARKER = "<!-- xodo-coverage -->"
+COMMENT_MARKER = "<!-- petja-coverage -->"
 # Variação menor que isto aparece como estável, para arredondamento não virar alarme.
 DELTA_NOISE = 0.05
 PROJECT = "**Projeto**"

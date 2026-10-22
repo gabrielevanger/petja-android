@@ -1,8 +1,8 @@
-import io.github.gabrielevanger.xodopet.buildlogic.minimumCoverage
+import io.github.gabrielevanger.petja.buildlogic.minimumCoverage
 
 plugins {
-    id("xodo.android.library")
-    id("xodo.android.hilt")
+    id("petja.android.library")
+    id("petja.android.hilt")
     alias(libs.plugins.kotlin.serialization)
 }
 

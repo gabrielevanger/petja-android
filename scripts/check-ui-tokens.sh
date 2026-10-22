@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Barra valores soltos nas telas: medidas, cores, estilos de texto e textos visíveis precisam vir
-# dos tokens do core/designsystem (XodoTheme) e dos arquivos strings.xml.
+# dos tokens do core/designsystem (PetjaTheme) e dos arquivos strings.xml.
 #
 # Fica de fora: o próprio core/designsystem (onde os tokens são definidos), os previews (*Preview.kt,
 # com dados de exemplo) e os testes.
@@ -19,10 +19,10 @@ mapfile -t files < <(
 )
 
 declare -a rules=(
-  '[0-9]+(\.[0-9]+)?\.(dp|sp)\b|medida solta: use XodoTheme.spacing, sizes ou typography'
-  'Color\(0x|cor solta: use um papel de XodoTheme.colors'
-  'MaterialTheme\.(typography|shapes|colorScheme)|estilo direto do Material: use XodoTheme'
-  'FontWeight\.|peso de fonte solto: use um estilo de XodoTheme.typography'
+  '[0-9]+(\.[0-9]+)?\.(dp|sp)\b|medida solta: use PetjaTheme.spacing, sizes ou typography'
+  'Color\(0x|cor solta: use um papel de PetjaTheme.colors'
+  'MaterialTheme\.(typography|shapes|colorScheme)|estilo direto do Material: use PetjaTheme'
+  'FontWeight\.|peso de fonte solto: use um estilo de PetjaTheme.typography'
   '(Text\(|text = )"|texto visível fixo: use stringResource'
   'joinToString\(" |separador fixo: use dotSeparated'
 )

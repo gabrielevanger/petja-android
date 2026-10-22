@@ -1,9 +1,9 @@
 import java.util.Properties
 
 plugins {
-    id("xodo.android.application")
-    id("xodo.android.compose")
-    id("xodo.android.hilt")
+    id("petja.android.application")
+    id("petja.android.compose")
+    id("petja.android.hilt")
 }
 
 // Projeto Supabase: supabase.url e supabase.anonKey no local.properties (fora do Git),
@@ -19,7 +19,7 @@ fun supabaseProperty(name: String): String = providers.gradleProperty(name).orNu
 
 android {
     defaultConfig {
-        applicationId = "io.github.gabrielevanger.xodopet"
+        applicationId = "io.github.gabrielevanger.petja"
         versionCode = 1
         versionName = "0.1.0"
         buildConfigField("String", "SUPABASE_URL", "\"${supabaseProperty("supabase.url")}\"")

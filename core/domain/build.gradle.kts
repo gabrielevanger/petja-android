@@ -1,7 +1,7 @@
-import io.github.gabrielevanger.xodopet.buildlogic.minimumCoverage
+import io.github.gabrielevanger.petja.buildlogic.minimumCoverage
 
 plugins {
-    id("xodo.jvm.library")
+    id("petja.jvm.library")
     // Fixtures e fakes compartilhados com os testes de outros módulos, fora do código de produção.
     `java-test-fixtures`
 }

@@ -1,5 +1,5 @@
 {
-  "name": "xodo-pet-db-tests",
+  "name": "petja-db-tests",
   "private": true,
   "type": "module",
   "scripts": {

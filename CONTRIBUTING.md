@@ -71,9 +71,9 @@ Telas não declaram valores soltos. Tudo vem do `core/designsystem` e dos arquiv
 
 | Em vez de | Use |
 |---|---|
-| `16.dp`, `12.sp` | `XodoTheme.spacing.m`, `XodoTheme.sizes.*`, estilos de `XodoTheme.typography` |
-| `MaterialTheme.typography.bodySmall`, `FontWeight.Bold` | o papel do texto: `XodoTheme.typography.caption`, `.price`, `.sectionTitle`... |
-| `Color(0xFF...)`, `MaterialTheme.colorScheme` | `XodoTheme.colors.primary`, `.onSurfaceVariant`... |
+| `16.dp`, `12.sp` | `PetjaTheme.spacing.m`, `PetjaTheme.sizes.*`, estilos de `PetjaTheme.typography` |
+| `MaterialTheme.typography.bodySmall`, `FontWeight.Bold` | o papel do texto: `PetjaTheme.typography.caption`, `.price`, `.sectionTitle`... |
+| `Color(0xFF...)`, `MaterialTheme.colorScheme` | `PetjaTheme.colors.primary`, `.onSurfaceVariant`... |
 | `Text("Tentar de novo")` | `stringResource(R.string....)`; textos usados em várias telas ficam em `core/ui` |
 | `joinToString(" · ")` | `dotSeparated(...)` |
 | Selo, título de seção, carregando, erro | `StatusBadge`, `SectionTitle`, `LoadingState`, `ErrorState`, `MessageState`, `Notice` |

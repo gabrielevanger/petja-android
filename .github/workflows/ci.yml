@@ -90,7 +90,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           comment_id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
-            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- xodo-coverage -->"))) | .id' \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("<!-- petja-coverage -->"))) | .id' \
             | head -n 1)
           run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
           printf '\nRelatório completo: artefato `cobertura-%s` [desta execução](%s).\n' "$GITHUB_SHA" "$run_url" \

@@ -1,4 +1,4 @@
 plugins {
-    id("xodo.android.library")
-    id("xodo.android.compose")
+    id("petja.android.library")
+    id("petja.android.compose")
 }

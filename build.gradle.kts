@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ktlint)
-    id("xodo.kover.aggregation")
+    id("petja.kover.aggregation")
 }
 
 // Aplicado na raiz para verificar também os scripts do Gradle deste diretório.

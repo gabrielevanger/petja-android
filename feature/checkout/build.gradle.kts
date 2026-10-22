@@ -1,5 +1,5 @@
 plugins {
-    id("xodo.android.feature")
+    id("petja.android.feature")
 }
 
 dependencies {
