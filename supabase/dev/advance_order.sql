@@ -1,4 +1,4 @@
--- Xodó Pet: anda um pedido para a próxima etapa, como se a loja tivesse tocado no botão.
+-- PetJá: anda um pedido para a próxima etapa, como se a loja tivesse tocado no botão.
 -- Só para desenvolvimento, enquanto o modo lojista (#18) não existe. Rode no SQL Editor do Supabase.
 --
 -- 1. Troque o número do pedido (o mesmo "#N" que o app mostra).

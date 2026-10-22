@@ -1,4 +1,4 @@
--- Xodó Pet: liga a SUA conta a uma loja fictícia, para testar o modo lojista e o admin.
+-- PetJá: liga a SUA conta a uma loja fictícia, para testar o modo lojista e o admin.
 -- Só para desenvolvimento. Rode no SQL Editor do Supabase depois de se cadastrar no app.
 --
 -- 1. Troque o e-mail abaixo pelo da sua conta de teste.

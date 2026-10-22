@@ -1,4 +1,4 @@
-# Xodó Pet: levantamento de requisitos
+# PetJá: levantamento de requisitos
 
 Documento vivo. O objetivo é listar tudo o que o projeto precisa para nada passar batido, separando o que entra no MVP do que fica para depois. Cada requisito tem um código (RF, RN, RNF) para ser citado em issues, commits e conversas.
 
@@ -351,13 +351,13 @@ Módulos iniciais: `app`, `core/domain`, `core/data`, `core/designsystem`, `core
 - [x] **Apps:** um APK só, com modos cliente, lojista e entregador
 - [x] **Serviços:** V2, com petshops e clínicas cadastrados e veículo adaptado para o leva e traz (seção 3.10)
 - [x] **Catálogo:** cadastrado pelo admin ou pelo lojista; seed com dados fictícios na fase mockada
-- [x] **Nome:** Xodó Pet (seção 13)
+- [x] **Nome:** PetJá (seção 13)
 - [x] **Painel web:** Next.js com `supabase-js` (seção 9)
 - [x] **Entrega:** entregador da própria loja, com rastreio em tempo real pelo modo entregador; entregadores parceiros da plataforma ficam para o futuro (RF-119)
 
 ### 11.2 Em aberto
-- [ ] Identidade visual do Xodó Pet: logo, paleta e mascote (seção 13)
-- [ ] Checar a disponibilidade do nome Xodó Pet (seção 13)
+- [ ] Identidade visual do PetJá: logo, paleta e mascote (seção 13)
+- [ ] Checar a disponibilidade do nome PetJá (seção 13)
 - [ ] Fonte real dos petshops não cadastrados: Google Places ou OpenStreetMap (RF-15, V2)
 - [ ] Percentual de comissão, antes de oficializar
 
@@ -380,16 +380,16 @@ Módulos iniciais: `app`, `core/domain`, `core/data`, `core/designsystem`, `core
 
 ## 13. Nome e identidade
 
-**Nome escolhido: Xodó Pet.** "Xodó" é como o tutor chama o próprio bicho: afetivo, bem brasileiro e fácil de lembrar.
+**Nome escolhido: PetJá.** Junta o pet com a promessa da entrega rápida ("já"), no mesmo tom de um app de delivery. Substituiu o primeiro nome, Xodó Pet, que não falava de entrega.
 
 ### 13.1 Antes de usar publicamente
-"Xodó" é uma palavra comum, e é provável que já existam petshops com nomes parecidos em outros estados. Para um projeto pessoal isso não impede nada, mas antes de publicar na Play Store ou oficializar:
+"Pet" e "já" são palavras comuns, e é provável que já existam petshops ou apps com nomes parecidos em outros estados. Para um projeto pessoal isso não impede nada, mas antes de publicar na Play Store ou oficializar:
 - [ ] Pesquisar a marca no **INPI** (classes de comércio de produtos pet e de serviço de entrega)
-- [ ] Verificar o domínio (`xodopet.com.br` e variações) e o @ no Instagram
+- [ ] Verificar o domínio (`petja.com.br` e variações) e o @ no Instagram
 - [ ] Procurar apps com nome parecido na Play Store
-- [ ] Se estiver ocupado, variações que mantêm a ideia: **Xodó RR**, **Meu Xodó**, **Xodó Delivery**
+- [ ] Se estiver ocupado, variações que mantêm a ideia: **PetJá RR**, **Pet Já Delivery**, **Pede Pet Já**
 
 ### 13.2 Identidade visual (a definir)
-- Tom de voz carinhoso, como quem fala com o próprio pet: "seu xodó vai amar", "o pedido do seu xodó saiu para entrega"
+- Tom de voz carinhoso e ágil, como quem fala com o próprio pet: "seu pet vai amar", "já saiu para entrega"
 - Mascote de vira-lata ou gato, com um toque de Roraima (um buriti, o Monte Roraima ao fundo, o leque de Boa Vista)
 - Paleta quente e acolhedora; a do lavrado (dourado do capim, verde do buriti, azul do céu) continua uma boa base

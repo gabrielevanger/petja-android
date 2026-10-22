@@ -1,4 +1,4 @@
--- Xodó Pet: dados fictícios para desenvolvimento.
+-- PetJá: dados fictícios para desenvolvimento.
 --
 -- Todas as lojas, telefones e endereços são INVENTADOS. As coordenadas ficam em bairros reais
 -- de Boa Vista, mas são aproximadas (servem para testar raio e distância, não para navegar).

@@ -1,13 +1,13 @@
-# Xodó Pet
+# PetJá
 
-[![CI](https://github.com/gabrielevanger/xodo-pet-android/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gabrielevanger/xodo-pet-android/actions/workflows/ci.yml)
+[![CI](https://github.com/gabrielevanger/petja-android/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gabrielevanger/petja-android/actions/workflows/ci.yml)
 
 Delivery de produtos para pets em Boa Vista (RR): uma vitrine com os petshops da cidade, no estilo do Zé Delivery.
 Projeto pessoal, por enquanto com dados fictícios.
 
 - **Requisitos:** [REQUISITOS.md](REQUISITOS.md)
 - **Banco (Supabase):** [supabase/README.md](supabase/README.md)
-- **O que falta fazer:** [issues por fase](https://github.com/gabrielevanger/xodo-pet-android/milestones)
+- **O que falta fazer:** [issues por fase](https://github.com/gabrielevanger/petja-android/milestones)
 - **Como contribuir:** [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Estrutura
@@ -24,7 +24,7 @@ feature/orders ....... meus pedidos e acompanhamento ao vivo
 feature/account ...... entrar, criar conta, senha e conta
 feature/storemode .... modo lojista: pedidos da loja ao vivo, etapas e alerta sonoro
 core/ui .............. formatação (R$, distância) e links de contato
-core/designsystem .... tema do Xodó (paleta do lavrado), claro e escuro
+core/designsystem .... tema do PetJá (paleta do lavrado), claro e escuro
 core/data ............ Supabase (PostgREST via supabase-kt), DTOs e mapeamento
 core/domain .......... Kotlin puro: modelos e regras da vitrine
 build-logic .......... plugins de convenção do Gradle

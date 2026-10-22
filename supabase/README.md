@@ -1,4 +1,4 @@
-# Xodó Pet: banco de dados (Supabase)
+# PetJá: banco de dados (Supabase)
 
 Postgres com PostGIS, regras de negócio em funções e segurança por Row Level Security.
 Os requisitos citados (RF, RN, RNF) estão em [REQUISITOS.md](../REQUISITOS.md).
