@@ -15,7 +15,7 @@
     <string name="storefront_no_partner_title">Nenhuma loja parceira entrega aqui ainda</string>
     <string name="storefront_all_closed_title">As lojas parceiras daqui estão fechadas agora</string>
     <string name="storefront_non_partners_title">Outros petshops perto de você</string>
-    <string name="storefront_non_partners_note">Não são parceiros do Xodó Pet: o pedido é feito direto com a loja.</string>
+    <string name="storefront_non_partners_note">Não são parceiros do PetJá: o pedido é feito direto com a loja.</string>
     <string name="storefront_non_partners_empty">Também não encontramos outros petshops por perto.</string>
     <string name="storefront_whatsapp">WhatsApp</string>
     <string name="storefront_call">Ligar</string>

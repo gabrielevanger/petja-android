@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Mesmo fundo do tema do Compose (XodoColors.kt). -->
-    <color name="xodo_window_background">#FFFFF8F2</color>
+    <!-- Mesmo fundo do tema do Compose (PetjaColors.kt). -->
+    <color name="petja_window_background">#FFFFF8F2</color>
 </resources>

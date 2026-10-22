@@ -7,7 +7,7 @@ ktlint {
     version.set(libs.versions.ktlint)
 }
 
-group = "io.github.gabrielevanger.xodopet.buildlogic"
+group = "io.github.gabrielevanger.petja.buildlogic"
 
 kotlin {
     jvmToolchain(
@@ -28,32 +28,32 @@ dependencies {
 gradlePlugin {
     plugins {
         register("jvmLibrary") {
-            id = "xodo.jvm.library"
-            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.JvmLibraryConventionPlugin"
+            id = "petja.jvm.library"
+            implementationClass = "io.github.gabrielevanger.petja.buildlogic.JvmLibraryConventionPlugin"
         }
         register("androidLibrary") {
-            id = "xodo.android.library"
-            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidLibraryConventionPlugin"
+            id = "petja.android.library"
+            implementationClass = "io.github.gabrielevanger.petja.buildlogic.AndroidLibraryConventionPlugin"
         }
         register("androidApplication") {
-            id = "xodo.android.application"
-            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidApplicationConventionPlugin"
+            id = "petja.android.application"
+            implementationClass = "io.github.gabrielevanger.petja.buildlogic.AndroidApplicationConventionPlugin"
         }
         register("androidCompose") {
-            id = "xodo.android.compose"
-            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidComposeConventionPlugin"
+            id = "petja.android.compose"
+            implementationClass = "io.github.gabrielevanger.petja.buildlogic.AndroidComposeConventionPlugin"
         }
         register("androidHilt") {
-            id = "xodo.android.hilt"
-            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidHiltConventionPlugin"
+            id = "petja.android.hilt"
+            implementationClass = "io.github.gabrielevanger.petja.buildlogic.AndroidHiltConventionPlugin"
         }
         register("koverAggregation") {
-            id = "xodo.kover.aggregation"
-            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.KoverAggregationConventionPlugin"
+            id = "petja.kover.aggregation"
+            implementationClass = "io.github.gabrielevanger.petja.buildlogic.KoverAggregationConventionPlugin"
         }
         register("androidFeature") {
-            id = "xodo.android.feature"
-            implementationClass = "io.github.gabrielevanger.xodopet.buildlogic.AndroidFeatureConventionPlugin"
+            id = "petja.android.feature"
+            implementationClass = "io.github.gabrielevanger.petja.buildlogic.AndroidFeatureConventionPlugin"
         }
     }
 }

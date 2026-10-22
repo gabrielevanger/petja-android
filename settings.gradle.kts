@@ -22,7 +22,7 @@ dependencyResolutionManagement {
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "xodo-pet"
+rootProject.name = "petja"
 
 include(":app")
 include(":core:domain")
