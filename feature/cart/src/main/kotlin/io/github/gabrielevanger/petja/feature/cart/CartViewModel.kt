@@ -19,6 +19,7 @@ import javax.inject.Inject
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
@@ -74,6 +76,8 @@ class CartViewModel @Inject constructor(
             }
         }
 
+    // Estado derivado só de flows (carrinho, lugar, conta e taxa): o stateIn(WhileSubscribed) já liga quando a
+    // tela aparece e desliga quando ela sai, o mesmo que OnStart e OnStop fariam.
     // Com o carrinho vazio a consulta não emite nada; o valor inicial evita que o combine fique esperando.
     val uiState: StateFlow<CartUiState> = combine(
         cartRepository.cart,
@@ -84,21 +88,30 @@ class CartViewModel @Inject constructor(
         cart?.toUiState(place, quote)?.copy(signedIn = account is AccountState.SignedIn) ?: CartUiState.Empty
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), CartUiState.Loading)
 
-    fun increase(variantId: String, currentQuantity: Int) = launch {
-        cartActions.setQuantity(
-            variantId,
-            currentQuantity + 1,
-        )
+    private val _events = Channel<CartEvent>(Channel.BUFFERED)
+    val events: Flow<CartEvent> = _events.receiveAsFlow()
+
+    fun onAction(action: CartAction) {
+        when (action) {
+            CartAction.OnBackClick -> send(CartEvent.Close)
+
+            is CartAction.OnIncrease -> launch { cartActions.setQuantity(action.variantId, action.quantity + 1) }
+
+            is CartAction.OnDecrease -> launch { cartActions.setQuantity(action.variantId, action.quantity - 1) }
+
+            CartAction.OnClearClick -> launch { cartActions.clear() }
+
+            CartAction.OnContinueClick -> {
+                val loaded = uiState.value as? CartUiState.Loaded ?: return
+                if (!loaded.canCheckout) return
+                send(if (loaded.signedIn) CartEvent.OpenCheckout else CartEvent.OpenSignIn)
+            }
+        }
     }
 
-    fun decrease(variantId: String, currentQuantity: Int) = launch {
-        cartActions.setQuantity(
-            variantId,
-            currentQuantity - 1,
-        )
+    private fun send(event: CartEvent) {
+        _events.trySend(event)
     }
-
-    fun clear() = launch { cartActions.clear() }
 
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }

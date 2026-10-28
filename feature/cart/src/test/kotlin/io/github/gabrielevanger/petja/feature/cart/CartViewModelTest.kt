@@ -1,5 +1,6 @@
 package io.github.gabrielevanger.petja.feature.cart
 
+import app.cash.turbine.test
 import io.github.gabrielevanger.petja.core.domain.DiagnosticLog
 import io.github.gabrielevanger.petja.core.domain.account.AccountState
 import io.github.gabrielevanger.petja.core.domain.cart.CartActions
@@ -76,7 +77,7 @@ class CartViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.increase("1kg", 1)
+        viewModel.onAction(CartAction.OnIncrease("1kg", 1))
         advanceUntilIdle()
 
         assertEquals(2, viewModel.loaded().lines.single().quantity)
@@ -131,7 +132,7 @@ class CartViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.decrease("1kg", 1)
+        viewModel.onAction(CartAction.OnDecrease("1kg", 1))
         advanceUntilIdle()
 
         assertEquals(CartUiState.Empty, viewModel.uiState.value)
@@ -142,7 +143,7 @@ class CartViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.clear()
+        viewModel.onAction(CartAction.OnClearClick)
         advanceUntilIdle()
 
         assertEquals(CartUiState.Empty, viewModel.uiState.value)
@@ -156,11 +157,35 @@ class CartViewModelTest {
         assertEquals(false, viewModel.loaded().canCheckout, "abaixo do pedido mínimo")
 
         accounts.signIn(ANA.email, "segredo123")
-        viewModel.increase("1kg", 1)
+        viewModel.onAction(CartAction.OnIncrease("1kg", 1))
         advanceUntilIdle()
 
         assertEquals(true, viewModel.loaded().signedIn)
         assertEquals(true, viewModel.loaded().canCheckout)
         assertEquals(AccountState.SignedIn(ANA), accounts.state.value)
+    }
+
+    @Test
+    fun `continue goes to sign in or checkout, and only when the order can go`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(CartAction.OnContinueClick)
+            expectNoEvents()
+
+            cart.update { it?.copy(lines = listOf(golden.copy(quantity = 2))) }
+            advanceUntilIdle()
+            viewModel.onAction(CartAction.OnContinueClick)
+            assertEquals(CartEvent.OpenSignIn, awaitItem())
+
+            accounts.signIn(ANA.email, "segredo123")
+            advanceUntilIdle()
+            viewModel.onAction(CartAction.OnContinueClick)
+            assertEquals(CartEvent.OpenCheckout, awaitItem())
+
+            viewModel.onAction(CartAction.OnBackClick)
+            assertEquals(CartEvent.Close, awaitItem())
+        }
     }
 }

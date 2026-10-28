@@ -1,5 +1,8 @@
 package io.github.gabrielevanger.petja.feature.cart
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollToNodeAction
@@ -41,7 +44,13 @@ class CartScreenTest {
     ) {
         composeRule.setContent {
             PetjaTheme {
-                CartScreen(state, onBack = {}, onIncrease = onIncrease, onDecrease = onDecrease, onClear = {})
+                CartScreen(state) { action ->
+                    when (action) {
+                        is CartAction.OnIncrease -> onIncrease(action.variantId, action.quantity)
+                        is CartAction.OnDecrease -> onDecrease(action.variantId, action.quantity)
+                        else -> Unit
+                    }
+                }
             }
         }
     }
@@ -89,33 +98,23 @@ class CartScreenTest {
     }
 
     @Test
-    fun checkoutButtonSignsInOrContinues() {
-        var signIn = 0
-        var checkout = 0
-        val ready = loaded.copy(missingForMinOrder = null)
+    fun continueButtonNamesTheNextStep() {
+        val actions = mutableListOf<CartAction>()
+        var signedIn by mutableStateOf(false)
         composeRule.setContent {
             PetjaTheme {
-                CartScreen(ready, {
-                }, { _, _ -> }, { _, _ -> }, {}, onCheckout = { checkout++ }, onSignIn = { signIn++ })
+                CartScreen(loaded.copy(missingForMinOrder = null, signedIn = signedIn)) { actions += it }
             }
         }
 
         composeRule.onNodeWithText("Entrar para finalizar").performClick()
-        assertEquals(1, signIn)
-        assertEquals(0, checkout)
-    }
-
-    @Test
-    fun signedInGoesToCheckout() {
-        var checkout = 0
-        composeRule.setContent {
-            PetjaTheme {
-                CartScreen(loaded.copy(missingForMinOrder = null, signedIn = true), {
-                }, { _, _ -> }, { _, _ -> }, {}, onCheckout = { checkout++ })
-            }
-        }
-
+        signedIn = true
         composeRule.onNodeWithText("Continuar").performClick()
-        assertEquals(1, checkout)
+        composeRule.onNodeWithContentDescription("Voltar").performClick()
+
+        assertEquals(
+            listOf(CartAction.OnContinueClick, CartAction.OnContinueClick, CartAction.OnBackClick),
+            actions,
+        )
     }
 }

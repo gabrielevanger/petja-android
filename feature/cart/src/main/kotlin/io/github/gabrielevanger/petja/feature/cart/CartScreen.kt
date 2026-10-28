@@ -36,6 +36,7 @@ import io.github.gabrielevanger.petja.core.designsystem.component.QuantitySteppe
 import io.github.gabrielevanger.petja.core.designsystem.component.SectionTitle
 import io.github.gabrielevanger.petja.core.designsystem.theme.PetjaTheme
 import io.github.gabrielevanger.petja.core.ui.BackTopBar
+import io.github.gabrielevanger.petja.core.ui.CollectEvents
 import io.github.gabrielevanger.petja.core.ui.dotSeparated
 
 @Composable
@@ -46,49 +47,34 @@ fun CartRoute(
     viewModel: CartViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    CartScreen(
-        state = state,
-        onBack = onBack,
-        onIncrease = viewModel::increase,
-        onDecrease = viewModel::decrease,
-        onClear = viewModel::clear,
-        onCheckout = onCheckout,
-        onSignIn = onSignIn,
-    )
+    CollectEvents(viewModel.events) { event ->
+        when (event) {
+            CartEvent.Close -> onBack()
+            CartEvent.OpenCheckout -> onCheckout()
+            CartEvent.OpenSignIn -> onSignIn()
+        }
+    }
+    CartScreen(state = state, onAction = viewModel::onAction)
 }
 
 @Composable
-fun CartScreen(
-    state: CartUiState,
-    onBack: () -> Unit,
-    onIncrease: (variantId: String, quantity: Int) -> Unit,
-    onDecrease: (variantId: String, quantity: Int) -> Unit,
-    onClear: () -> Unit,
-    onCheckout: () -> Unit = {},
-    onSignIn: () -> Unit = {},
-) {
+fun CartScreen(state: CartUiState, onAction: (CartAction) -> Unit) {
     Scaffold(
         containerColor = PetjaTheme.colors.background,
-        topBar = { BackTopBar(stringResource(R.string.cart_title), onBack) },
-        bottomBar = { if (state is CartUiState.Loaded) SummaryPanel(state, onCheckout, onSignIn) },
+        topBar = { BackTopBar(stringResource(R.string.cart_title), onBack = { onAction(CartAction.OnBackClick) }) },
+        bottomBar = { if (state is CartUiState.Loaded) SummaryPanel(state) { onAction(CartAction.OnContinueClick) } },
     ) { padding ->
         val modifier = Modifier.padding(padding).consumeWindowInsets(padding)
         when (state) {
             CartUiState.Loading -> LoadingState(stringResource(R.string.cart_loading), modifier = modifier)
             CartUiState.Empty -> MessageState(stringResource(R.string.cart_empty), modifier = modifier)
-            is CartUiState.Loaded -> CartContent(state, onIncrease, onDecrease, onClear, modifier)
+            is CartUiState.Loaded -> CartContent(state, onAction, modifier)
         }
     }
 }
 
 @Composable
-private fun CartContent(
-    state: CartUiState.Loaded,
-    onIncrease: (String, Int) -> Unit,
-    onDecrease: (String, Int) -> Unit,
-    onClear: () -> Unit,
-    modifier: Modifier,
-) {
+private fun CartContent(state: CartUiState.Loaded, onAction: (CartAction) -> Unit, modifier: Modifier) {
     val spacing = PetjaTheme.spacing
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(spacing.l),
@@ -97,14 +83,16 @@ private fun CartContent(
     ) {
         item(key = "store") { StoreHeader(state) }
         items(state.lines, key = { it.variantId }) { line ->
-            CartLineCard(line, onIncrease = { onIncrease(line.variantId, line.quantity) }, onDecrease = {
-                onDecrease(line.variantId, line.quantity)
-            })
+            CartLineCard(
+                line,
+                onIncrease = { onAction(CartAction.OnIncrease(line.variantId, line.quantity)) },
+                onDecrease = { onAction(CartAction.OnDecrease(line.variantId, line.quantity)) },
+            )
         }
         item(key = "clear") {
             PetjaButton(
                 text = stringResource(R.string.cart_clear),
-                onClick = onClear,
+                onClick = { onAction(CartAction.OnClearClick) },
                 style = PetjaButtonStyle.Text,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -172,12 +160,9 @@ private fun CartLineCard(line: CartLineUi, onIncrease: () -> Unit, onDecrease: (
     }
 }
 
-/**
- * Resumo fixo embaixo, com o botão de seguir. Sem login, o botão leva para entrar e volta para o
- * carrinho; logado, segue para o checkout.
- */
+/** Resumo fixo embaixo, com o botão de seguir; o ViewModel decide se vai para o checkout ou para entrar. */
 @Composable
-private fun SummaryPanel(state: CartUiState.Loaded, onCheckout: () -> Unit, onSignIn: () -> Unit) {
+private fun SummaryPanel(state: CartUiState.Loaded, onContinue: () -> Unit) {
     Surface(color = PetjaTheme.colors.surfaceContainerLowest) {
         Column(
             verticalArrangement = Arrangement.spacedBy(PetjaTheme.spacing.s),
@@ -216,7 +201,7 @@ private fun SummaryPanel(state: CartUiState.Loaded, onCheckout: () -> Unit, onSi
                 text = stringResource(
                     if (state.signedIn) R.string.cart_checkout else R.string.cart_sign_in_to_checkout,
                 ),
-                onClick = if (state.signedIn) onCheckout else onSignIn,
+                onClick = onContinue,
                 enabled = state.canCheckout,
                 modifier = Modifier.fillMaxWidth(),
             )
