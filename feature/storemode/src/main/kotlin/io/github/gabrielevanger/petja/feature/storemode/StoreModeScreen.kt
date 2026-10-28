@@ -31,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gabrielevanger.petja.core.designsystem.component.BadgeTone
 import io.github.gabrielevanger.petja.core.designsystem.component.ErrorState
@@ -50,6 +52,7 @@ import io.github.gabrielevanger.petja.core.domain.storemode.StoreAction
 import io.github.gabrielevanger.petja.core.domain.storemode.StoreOrder
 import io.github.gabrielevanger.petja.core.domain.storemode.actions
 import io.github.gabrielevanger.petja.core.ui.BackTopBar
+import io.github.gabrielevanger.petja.core.ui.CollectEvents
 import io.github.gabrielevanger.petja.core.ui.R as CoreUiR
 import io.github.gabrielevanger.petja.core.ui.dotSeparated
 import io.github.gabrielevanger.petja.core.ui.formatBrl
@@ -64,47 +67,42 @@ fun StoreModeRoute(onBack: () -> Unit, onSignIn: () -> Unit, viewModel: StoreMod
         view.keepScreenOn = true
         onDispose { view.keepScreenOn = false }
     }
-    StoreModeScreen(
-        state,
-        StoreModeActions(
-            onBack = onBack,
-            onSignIn = onSignIn,
-            onRetry = viewModel::retry,
-            onSelectStore = viewModel::selectStore,
-            onAct = viewModel::act,
-            onConfirmReason = viewModel::confirmReason,
-            onDismissReason = viewModel::dismissReason,
-            onMessageShown = viewModel::messageShown,
-        ),
-    )
-}
-
-class StoreModeActions(
-    val onBack: () -> Unit = {},
-    val onSignIn: () -> Unit = {},
-    val onRetry: () -> Unit = {},
-    val onSelectStore: (String) -> Unit = {},
-    val onAct: (StoreOrder, StoreAction) -> Unit = { _, _ -> },
-    val onConfirmReason: (String) -> Unit = {},
-    val onDismissReason: () -> Unit = {},
-    val onMessageShown: () -> Unit = {},
-)
-
-@Composable
-fun StoreModeScreen(state: StoreModeUiState, actions: StoreModeActions) {
-    val snackbar = remember { SnackbarHostState() }
-    val loaded = state as? StoreModeUiState.Loaded
-    loaded?.message?.let { message ->
-        val text = message.text()
-        LaunchedEffect(message) {
-            snackbar.showSnackbar(text)
-            actions.onMessageShown()
+    // O aviso chega como evento e fica aqui até o snackbar terminar de mostrar.
+    var message by remember { mutableStateOf<StoreMessage?>(null) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onAction(StoreModeAction.OnStart) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onAction(StoreModeAction.OnStop) }
+    CollectEvents(viewModel.events) { event ->
+        when (event) {
+            StoreModeEvent.Close -> onBack()
+            StoreModeEvent.OpenSignIn -> onSignIn()
+            is StoreModeEvent.ShowMessage -> message = event.message
         }
     }
-    loaded?.askingReason?.let { ReasonDialog(it, actions) }
+    StoreModeScreen(state, viewModel::onAction, message = message, onMessageShown = { message = null })
+}
+
+@Composable
+fun StoreModeScreen(
+    state: StoreModeUiState,
+    onAction: (StoreModeAction) -> Unit,
+    message: StoreMessage? = null,
+    onMessageShown: () -> Unit = {},
+) {
+    val snackbar = remember { SnackbarHostState() }
+    val loaded = state as? StoreModeUiState.Loaded
+    message?.let { shown ->
+        val text = shown.text()
+        LaunchedEffect(shown) {
+            snackbar.showSnackbar(text)
+            onMessageShown()
+        }
+    }
+    loaded?.askingReason?.let { ReasonDialog(it, onAction) }
     Scaffold(
         containerColor = PetjaTheme.colors.background,
-        topBar = { BackTopBar(stringResource(R.string.store_mode_title), actions.onBack) },
+        topBar = {
+            BackTopBar(stringResource(R.string.store_mode_title), onBack = { onAction(StoreModeAction.OnBackClick) })
+        },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
         val modifier = Modifier.padding(padding).consumeWindowInsets(padding)
@@ -114,26 +112,26 @@ fun StoreModeScreen(state: StoreModeUiState, actions: StoreModeActions) {
             StoreModeUiState.Error -> ErrorState(
                 stringResource(R.string.store_mode_error),
                 stringResource(CoreUiR.string.common_retry),
-                actions.onRetry,
+                { onAction(StoreModeAction.OnRetryClick) },
                 modifier,
             )
 
             StoreModeUiState.NotSignedIn -> ErrorState(
                 stringResource(R.string.store_mode_not_signed_in),
                 stringResource(R.string.store_mode_sign_in),
-                actions.onSignIn,
+                { onAction(StoreModeAction.OnSignInClick) },
                 modifier,
             )
 
             StoreModeUiState.NoStore -> MessageState(stringResource(R.string.store_mode_no_store), modifier)
 
-            is StoreModeUiState.Loaded -> StoreOrders(state, actions, modifier)
+            is StoreModeUiState.Loaded -> StoreOrders(state, onAction, modifier)
         }
     }
 }
 
 @Composable
-private fun StoreOrders(state: StoreModeUiState.Loaded, actions: StoreModeActions, modifier: Modifier) {
+private fun StoreOrders(state: StoreModeUiState.Loaded, onAction: (StoreModeAction) -> Unit, modifier: Modifier) {
     val spacing = PetjaTheme.spacing
     val pending = state.orders.filter { it.status == OrderStatus.Pending }
     val active = state.orders.filter { it.status != OrderStatus.Pending && !it.status.isFinal }
@@ -143,13 +141,13 @@ private fun StoreOrders(state: StoreModeUiState.Loaded, actions: StoreModeAction
         contentPadding = PaddingValues(horizontal = spacing.l, vertical = spacing.m),
         modifier = modifier,
     ) {
-        item(key = "header") { Header(state, actions) }
+        item(key = "header") { Header(state, onAction) }
         if (state.orders.isEmpty()) {
             item(key = "empty") { MessageState(stringResource(R.string.store_mode_empty)) }
         }
-        section("new", R.string.store_mode_section_new, pending, state, actions)
-        section("active", R.string.store_mode_section_active, active, state, actions)
-        section("finished", R.string.store_mode_section_finished, finished, state, actions)
+        section("new", R.string.store_mode_section_new, pending, state, onAction)
+        section("active", R.string.store_mode_section_active, active, state, onAction)
+        section("finished", R.string.store_mode_section_finished, finished, state, onAction)
     }
 }
 
@@ -158,25 +156,25 @@ private fun LazyListScope.section(
     title: Int,
     orders: List<StoreOrder>,
     state: StoreModeUiState.Loaded,
-    actions: StoreModeActions,
+    onAction: (StoreModeAction) -> Unit,
 ) {
     if (orders.isEmpty()) return
     item(key = key) {
         SectionTitle(stringResource(title), modifier = Modifier.padding(top = PetjaTheme.spacing.s))
     }
-    items(orders, key = { it.id }) { order -> StoreOrderCard(order, working = state.working == order.id, actions) }
+    items(orders, key = { it.id }) { order -> StoreOrderCard(order, working = state.working == order.id, onAction) }
 }
 
 /** Nome da loja (ou a escolha, para quem opera mais de uma) e o aviso de que a tela se atualiza. */
 @Composable
-private fun Header(state: StoreModeUiState.Loaded, actions: StoreModeActions) {
+private fun Header(state: StoreModeUiState.Loaded, onAction: (StoreModeAction) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(PetjaTheme.spacing.xs)) {
         if (state.stores.size > 1) {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(PetjaTheme.spacing.xs)) {
                 items(state.stores, key = { it.id }) { store ->
                     FilterChip(
                         selected = store.id == state.storeId,
-                        onClick = { actions.onSelectStore(store.id) },
+                        onClick = { onAction(StoreModeAction.OnStoreClick(store.id)) },
                         label = { Text(store.name) },
                     )
                 }
@@ -193,7 +191,7 @@ private fun Header(state: StoreModeUiState.Loaded, actions: StoreModeActions) {
 }
 
 @Composable
-private fun StoreOrderCard(order: StoreOrder, working: Boolean, actions: StoreModeActions) {
+private fun StoreOrderCard(order: StoreOrder, working: Boolean, onAction: (StoreModeAction) -> Unit) {
     val spacing = PetjaTheme.spacing
     val muted = PetjaTheme.colors.onSurfaceVariant
     PetjaCard(
@@ -254,7 +252,7 @@ private fun StoreOrderCard(order: StoreOrder, working: Boolean, actions: StoreMo
             order.actions.forEachIndexed { index, action ->
                 PetjaButton(
                     text = action.label(),
-                    onClick = { actions.onAct(order, action) },
+                    onClick = { onAction(StoreModeAction.OnOrderAction(order, action)) },
                     style = if (index == 0) PetjaButtonStyle.Filled else PetjaButtonStyle.Outlined,
                     enabled = !working,
                     loading = working && index == 0,
@@ -267,10 +265,10 @@ private fun StoreOrderCard(order: StoreOrder, working: Boolean, actions: StoreMo
 
 /** Recusa e não entrega pedem o motivo, que o cliente vê no acompanhamento. */
 @Composable
-private fun ReasonDialog(request: ReasonRequest, actions: StoreModeActions) {
+private fun ReasonDialog(request: ReasonRequest, onAction: (StoreModeAction) -> Unit) {
     var reason by rememberSaveable(request) { mutableStateOf("") }
     AlertDialog(
-        onDismissRequest = actions.onDismissReason,
+        onDismissRequest = { onAction(StoreModeAction.OnDismissReason) },
         title = {
             Text(
                 stringResource(
@@ -292,12 +290,14 @@ private fun ReasonDialog(request: ReasonRequest, actions: StoreModeActions) {
             }
         },
         confirmButton = {
-            TextButton(onClick = { actions.onConfirmReason(reason) }, enabled = reason.isNotBlank()) {
+            TextButton(onClick = { onAction(StoreModeAction.OnConfirmReason(reason)) }, enabled = reason.isNotBlank()) {
                 Text(stringResource(R.string.store_reason_confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = actions.onDismissReason) { Text(stringResource(R.string.store_reason_dismiss)) }
+            TextButton(onClick = {
+                onAction(StoreModeAction.OnDismissReason)
+            }) { Text(stringResource(R.string.store_reason_dismiss)) }
         },
     )
 }

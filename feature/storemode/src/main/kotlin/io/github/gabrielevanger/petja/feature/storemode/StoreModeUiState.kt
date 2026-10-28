@@ -27,7 +27,6 @@ sealed interface StoreModeUiState {
         val orders: ImmutableList<StoreOrder>,
         val working: String? = null,
         val askingReason: ReasonRequest? = null,
-        val message: StoreMessage? = null,
     ) : StoreModeUiState {
         val storeName: String get() = stores.first { it.id == storeId }.name
     }
@@ -35,5 +34,3 @@ sealed interface StoreModeUiState {
 
 @Immutable
 data class ReasonRequest(val orderId: String, val number: Long, val action: StoreAction)
-
-enum class StoreMessage { ActionFailed, OutOfDate, NotAllowed }
