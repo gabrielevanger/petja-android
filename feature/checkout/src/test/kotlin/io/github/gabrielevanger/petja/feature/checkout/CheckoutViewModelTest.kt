@@ -1,5 +1,6 @@
 package io.github.gabrielevanger.petja.feature.checkout
 
+import app.cash.turbine.test
 import io.github.gabrielevanger.petja.core.domain.DiagnosticLog
 import io.github.gabrielevanger.petja.core.domain.cart.CartActions
 import io.github.gabrielevanger.petja.core.domain.checkout.CheckoutError
@@ -56,7 +57,7 @@ class CheckoutViewModelTest {
         QuoteDelivery(storefront),
         PlaceOrder(checkout, CartActions(cart)),
         DiagnosticLog { message, _ -> warnings += message },
-    )
+    ).apply { onAction(CheckoutAction.OnStart) }
 
     private fun CheckoutViewModel.ready() = assertInstanceOf(CheckoutUiState.Ready::class.java, uiState.value)
 
@@ -93,15 +94,15 @@ class CheckoutViewModelTest {
         assertEquals("Centro", form?.neighborhood)
         assertFalse(viewModel.ready().canPlaceOrder)
 
-        viewModel.saveAddress()
+        viewModel.onAction(CheckoutAction.OnSaveAddressClick)
         assertEquals(setOf(AddressField.Street, AddressField.Number), viewModel.ready().newAddress?.missing)
 
-        viewModel.onAddressChange(AddressField.Street, "Rua Nova")
-        viewModel.onAddressChange(AddressField.Number, "12")
-        viewModel.onAddressChange(AddressField.Complement, "Apto 2")
-        viewModel.onAddressChange(AddressField.Reference, "Portão azul")
-        viewModel.onAddressChange(AddressField.Neighborhood, "Caçari")
-        viewModel.saveAddress()
+        viewModel.onAction(CheckoutAction.OnAddressFieldChange(AddressField.Street, "Rua Nova"))
+        viewModel.onAction(CheckoutAction.OnAddressFieldChange(AddressField.Number, "12"))
+        viewModel.onAction(CheckoutAction.OnAddressFieldChange(AddressField.Complement, "Apto 2"))
+        viewModel.onAction(CheckoutAction.OnAddressFieldChange(AddressField.Reference, "Portão azul"))
+        viewModel.onAction(CheckoutAction.OnAddressFieldChange(AddressField.Neighborhood, "Caçari"))
+        viewModel.onAction(CheckoutAction.OnSaveAddressClick)
         advanceUntilIdle()
 
         val state = viewModel.ready()
@@ -117,14 +118,14 @@ class CheckoutViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.showNewAddress()
+        viewModel.onAction(CheckoutAction.OnNewAddressClick)
         assertEquals("Centro", viewModel.ready().newAddress?.placeName)
         assertFalse(viewModel.ready().canPlaceOrder)
 
-        viewModel.cancelNewAddress()
+        viewModel.onAction(CheckoutAction.OnCancelNewAddressClick)
         assertNull(viewModel.ready().newAddress)
-        viewModel.selectAddress("casa")
-        viewModel.selectAddress("nao-existe")
+        viewModel.onAction(CheckoutAction.OnAddressClick("casa"))
+        viewModel.onAction(CheckoutAction.OnAddressClick("nao-existe"))
         advanceUntilIdle()
         assertEquals("casa", viewModel.ready().selectedAddressId)
     }
@@ -154,17 +155,22 @@ class CheckoutViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.selectPayment(PaymentOption.Cash)
-        viewModel.onChangeForChange("100")
-        viewModel.onNotesChange("Tocar a campainha")
-        viewModel.submit()
-        advanceUntilIdle()
+        viewModel.onAction(CheckoutAction.OnPaymentClick(PaymentOption.Cash))
+        viewModel.onAction(CheckoutAction.OnChangeForChange("100"))
+        viewModel.onAction(CheckoutAction.OnNotesChange("Tocar a campainha"))
+        viewModel.events.test {
+            viewModel.onAction(CheckoutAction.OnPlaceOrderClick)
+            advanceUntilIdle()
+            assertEquals(
+                CheckoutEvent.OrderPlaced(PlacedOrderUi("pedido-1", 1, "Petshop Lavrado", "R$ 66,80")),
+                awaitItem(),
+            )
+        }
 
         val call = checkout.orders.single()
         assertEquals(PaymentChoice.Cash(Money(10000)), call.payment)
         assertEquals(Money(6680), call.expectedTotal)
         assertEquals("Tocar a campainha", call.notes)
-        assertEquals(PlacedOrderUi("pedido-1", 1, "Petshop Lavrado", "R$ 66,80"), viewModel.ready().placed)
         assertNull(cart.cart.value)
     }
 
@@ -173,9 +179,9 @@ class CheckoutViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.selectPayment(PaymentOption.Cash)
-        viewModel.onChangeForChange("cem reais")
-        viewModel.submit()
+        viewModel.onAction(CheckoutAction.OnPaymentClick(PaymentOption.Cash))
+        viewModel.onAction(CheckoutAction.OnChangeForChange("cem reais"))
+        viewModel.onAction(CheckoutAction.OnPlaceOrderClick)
 
         assertTrue(viewModel.ready().changeForInvalid)
         assertTrue(checkout.orders.isEmpty())
@@ -186,8 +192,8 @@ class CheckoutViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.selectPayment(PaymentOption.Card)
-        viewModel.submit()
+        viewModel.onAction(CheckoutAction.OnPaymentClick(PaymentOption.Card))
+        viewModel.onAction(CheckoutAction.OnPlaceOrderClick)
         advanceUntilIdle()
 
         assertEquals(PaymentChoice.CardOnDelivery, checkout.orders.single().payment)
@@ -199,7 +205,7 @@ class CheckoutViewModelTest {
         advanceUntilIdle()
         checkout.failWith = CheckoutError.PriceChanged
 
-        viewModel.submit()
+        viewModel.onAction(CheckoutAction.OnPlaceOrderClick)
         advanceUntilIdle()
 
         assertEquals(CheckoutError.PriceChanged, viewModel.ready().error)
@@ -222,15 +228,31 @@ class CheckoutViewModelTest {
         checkout.savedAddresses = emptyList()
         val viewModel = viewModel()
         advanceUntilIdle()
-        viewModel.onAddressChange(AddressField.Street, "Rua Nova")
-        viewModel.onAddressChange(AddressField.Number, "12")
+        viewModel.onAction(CheckoutAction.OnAddressFieldChange(AddressField.Street, "Rua Nova"))
+        viewModel.onAction(CheckoutAction.OnAddressFieldChange(AddressField.Number, "12"))
         checkout.failWith = CheckoutError.Network
 
-        viewModel.saveAddress()
+        viewModel.onAction(CheckoutAction.OnSaveAddressClick)
         advanceUntilIdle()
 
         assertEquals(CheckoutError.Network, viewModel.ready().error)
         assertFalse(viewModel.ready().newAddress!!.saving)
         assertEquals(1, warnings.size)
+    }
+
+    @Test
+    fun `back and sign in become events, and starting again does not reload`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        advanceUntilIdle()
+        viewModel.onAction(CheckoutAction.OnStart)
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(CheckoutAction.OnBackClick)
+            assertEquals(CheckoutEvent.Close, awaitItem())
+            viewModel.onAction(CheckoutAction.OnSignInClick)
+            assertEquals(CheckoutEvent.OpenSignIn, awaitItem())
+        }
+        assertEquals(1, checkout.addressesCalls, "voltar para a tela não busca os endereços de novo")
     }
 }

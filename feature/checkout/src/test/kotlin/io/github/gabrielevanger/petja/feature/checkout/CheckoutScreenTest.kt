@@ -37,22 +37,21 @@ class CheckoutScreenTest {
         minOrder = "R$ 30,00",
     )
 
-    private fun show(state: CheckoutUiState, actions: CheckoutActions = CheckoutActions()) =
-        composeRule.setContent { PetjaTheme { CheckoutScreen(state, actions) } }
+    private fun show(state: CheckoutUiState, onAction: (CheckoutAction) -> Unit = {}) =
+        composeRule.setContent { PetjaTheme { CheckoutScreen(state, onAction) } }
 
     @Test
     fun readyCheckoutShowsAddressPaymentAndTotal() {
-        var submitted = 0
-        var payment: PaymentOption? = null
-        show(ready, CheckoutActions(onSubmit = { submitted++ }, onSelectPayment = { payment = it }))
+        val actions = mutableListOf<CheckoutAction>()
+        show(ready) { actions += it }
 
         composeRule.onNodeWithText("Rua Teste, 10").assertExists()
         composeRule.onNodeWithText("Centro · Perto da praça").assertExists()
         composeRule.onNodeWithText("Dinheiro").performScrollTo().performClick()
-        assertEquals(PaymentOption.Cash, payment)
+        assertEquals(CheckoutAction.OnPaymentClick(PaymentOption.Cash), actions.last())
         composeRule.onNodeWithText("R$ 66,80").assertExists()
         composeRule.onNodeWithText("Fazer pedido").assertIsEnabled().performClick()
-        assertEquals(1, submitted)
+        assertEquals(CheckoutAction.OnPlaceOrderClick, actions.last())
     }
 
     @Test
@@ -60,10 +59,7 @@ class CheckoutScreenTest {
         var change = ""
         show(
             ready.copy(payment = PaymentOption.Cash, changeForInvalid = true),
-            CheckoutActions(onChangeForChange = {
-                change =
-                    it
-            }),
+            onAction = { if (it is CheckoutAction.OnChangeForChange) change = it.text },
         )
 
         composeRule.onNodeWithText("Escreva só o valor, como 100 ou 100,50.").performScrollTo().assertExists()
@@ -78,7 +74,13 @@ class CheckoutScreenTest {
         val form = NewAddressForm(neighborhood = "Centro", placeName = "Centro", missing = setOf(AddressField.Street))
         show(
             ready.copy(newAddress = form, selectedAddressId = null, delivery = DeliveryUi.ChooseAddress, total = null),
-            CheckoutActions(onSaveAddress = { saved++ }, onAddressChange = { field, value -> typed = field to value }),
+            onAction = {
+                when (it) {
+                    CheckoutAction.OnSaveAddressClick -> saved++
+                    is CheckoutAction.OnAddressFieldChange -> typed = it.field to it.value
+                    else -> Unit
+                }
+            },
         )
 
         composeRule.onNodeWithText("Preencha este campo.").assertExists()
@@ -101,7 +103,7 @@ class CheckoutScreenTest {
     @Test
     fun notSignedInOffersSignIn() {
         var signIn = 0
-        show(ready.copy(error = CheckoutError.NotSignedIn), CheckoutActions(onSignIn = { signIn++ }))
+        show(ready.copy(error = CheckoutError.NotSignedIn)) { if (it == CheckoutAction.OnSignInClick) signIn++ }
 
         composeRule.onNodeWithText("Entre na sua conta para fazer o pedido.").assertExists()
         composeRule.onNodeWithText("Entrar").performClick()

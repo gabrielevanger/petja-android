@@ -37,7 +37,12 @@ class FakeCheckoutRepository(var savedAddresses: List<Address> = emptyList()) : 
         val expectedTotal: Money,
     )
 
+    /** Quantas vezes os endereços foram buscados, para conferir que a tela não recarrega à toa. */
+    var addressesCalls = 0
+        private set
+
     override suspend fun addresses(): List<Address> {
+        addressesCalls++
         failAddressesWith?.let {
             failAddressesWith = null
             throw CheckoutException(it)

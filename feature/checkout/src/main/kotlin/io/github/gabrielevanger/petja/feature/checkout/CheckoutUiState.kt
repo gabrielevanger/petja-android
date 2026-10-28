@@ -30,7 +30,6 @@ sealed interface CheckoutUiState {
         val minOrder: String,
         val submitting: Boolean = false,
         val error: CheckoutError? = null,
-        val placed: PlacedOrderUi? = null,
     ) : CheckoutUiState {
         val canPlaceOrder: Boolean
             get() = !submitting && selectedAddressId != null && newAddress == null && total != null &&

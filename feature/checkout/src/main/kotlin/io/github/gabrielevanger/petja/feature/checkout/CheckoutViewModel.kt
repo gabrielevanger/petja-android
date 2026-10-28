@@ -21,12 +21,18 @@ import io.github.gabrielevanger.petja.core.ui.formatBrl
 import io.github.gabrielevanger.petja.core.ui.parseBrl
 import javax.inject.Inject
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -52,8 +58,45 @@ class CheckoutViewModel @Inject constructor(
     private var fee: Money? = null
     private var quoting: Job? = null
 
-    init {
-        viewModelScope.launch { load() }
+    private val _events = Channel<CheckoutEvent>(Channel.BUFFERED)
+    val events: Flow<CheckoutEvent> = _events.receiveAsFlow()
+
+    /** Carrega uma vez só por ViewModel; a rotação não refaz a consulta de endereços e taxa. */
+    private var started = false
+
+    fun onAction(action: CheckoutAction) {
+        when (action) {
+            CheckoutAction.OnStart -> if (!started) {
+                started = true
+                viewModelScope.launch { load() }
+            }
+
+            CheckoutAction.OnBackClick -> send(CheckoutEvent.Close)
+
+            CheckoutAction.OnSignInClick -> send(CheckoutEvent.OpenSignIn)
+
+            is CheckoutAction.OnAddressClick -> selectAddress(action.addressId)
+
+            CheckoutAction.OnNewAddressClick -> showNewAddress()
+
+            CheckoutAction.OnCancelNewAddressClick -> cancelNewAddress()
+
+            is CheckoutAction.OnAddressFieldChange -> onAddressChange(action.field, action.value)
+
+            CheckoutAction.OnSaveAddressClick -> saveAddress()
+
+            is CheckoutAction.OnPaymentClick -> selectPayment(action.option)
+
+            is CheckoutAction.OnChangeForChange -> onChangeForChange(action.text)
+
+            is CheckoutAction.OnNotesChange -> updateReady { it.copy(notes = action.text) }
+
+            CheckoutAction.OnPlaceOrderClick -> submit()
+        }
+    }
+
+    private fun send(event: CheckoutEvent) {
+        _events.trySend(event)
     }
 
     private suspend fun load() {
@@ -90,19 +133,19 @@ class CheckoutViewModel @Inject constructor(
         selected?.let(::quote)
     }
 
-    fun selectAddress(id: String) {
+    private fun selectAddress(id: String) {
         val address = addresses.firstOrNull { it.id == id } ?: return
         updateReady { it.copy(selectedAddressId = id, newAddress = null, error = null) }
         quote(address)
     }
 
-    fun showNewAddress() = updateReady {
+    private fun showNewAddress() = updateReady {
         it.copy(newAddress = NewAddressForm(neighborhood = placeName, placeName = placeName), error = null)
     }
 
-    fun cancelNewAddress() = updateReady { if (addresses.isEmpty()) it else it.copy(newAddress = null) }
+    private fun cancelNewAddress() = updateReady { if (addresses.isEmpty()) it else it.copy(newAddress = null) }
 
-    fun onAddressChange(field: AddressField, value: String) = updateReady { state ->
+    private fun onAddressChange(field: AddressField, value: String) = updateReady { state ->
         val form = state.newAddress ?: return@updateReady state
         val changed = when (field) {
             AddressField.Street -> form.copy(street = value)
@@ -114,7 +157,7 @@ class CheckoutViewModel @Inject constructor(
         state.copy(newAddress = changed.copy(missing = changed.missing - field), error = null)
     }
 
-    fun saveAddress() {
+    private fun saveAddress() {
         val form = (_uiState.value as? CheckoutUiState.Ready)?.newAddress ?: return
         val missing = buildSet {
             if (form.street.isBlank()) add(AddressField.Street)
@@ -149,17 +192,15 @@ class CheckoutViewModel @Inject constructor(
         }
     }
 
-    fun selectPayment(option: PaymentOption) = updateReady {
+    private fun selectPayment(option: PaymentOption) = updateReady {
         it.copy(payment = option, changeForInvalid = false, error = null)
     }
 
-    fun onChangeForChange(text: String) = updateReady {
+    private fun onChangeForChange(text: String) = updateReady {
         it.copy(changeFor = text, changeForInvalid = false, error = null)
     }
 
-    fun onNotesChange(text: String) = updateReady { it.copy(notes = text) }
-
-    fun submit() {
+    private fun submit() {
         val state = _uiState.value as? CheckoutUiState.Ready ?: return
         if (!state.canPlaceOrder) return
         val address = addresses.firstOrNull { it.id == state.selectedAddressId } ?: return
@@ -183,12 +224,12 @@ class CheckoutViewModel @Inject constructor(
                 // O carrinho do momento do pedido, não o de quando a tela abriu.
                 val current = cartRepository.cart.first() ?: throw CheckoutException(CheckoutError.EmptyCart)
                 val order = placeOrder(current, address, payment, state.notes, fee)
-                updateReady {
-                    it.copy(
-                        submitting = false,
-                        placed = PlacedOrderUi(order.id, order.number, current.storeName, order.total.formatBrl()),
-                    )
-                }
+                updateReady { it.copy(submitting = false) }
+                send(
+                    CheckoutEvent.OrderPlaced(
+                        PlacedOrderUi(order.id, order.number, current.storeName, order.total.formatBrl()),
+                    ),
+                )
             } catch (e: CheckoutException) {
                 logIfUnexpected(e)
                 updateReady { it.copy(submitting = false, error = e.error) }
@@ -205,24 +246,21 @@ class CheckoutViewModel @Inject constructor(
         quoting?.cancel()
         fee = null
         updateReady { it.copy(delivery = DeliveryUi.Calculating, total = null) }
-        quoting = viewModelScope.launch {
-            val delivery = try {
-                quoteDelivery(cart.storeId, address.location)?.let { quote ->
-                    fee = quote.fee
-                    DeliveryUi.Fee(
-                        quote.fee.formatBrl(),
-                        isFree = quote.fee == Money.ZERO,
-                        storeIsOpen = quote.storeIsOpen,
-                    )
-                } ?: DeliveryUi.OutOfArea
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.warn("Falha ao calcular a entrega no checkout", e)
-                DeliveryUi.Error
-            }
-            updateReady { it.copy(delivery = delivery, total = fee?.let { f -> (cart.subtotal + f).formatBrl() }) }
+        quoting = flow {
+            val delivery = quoteDelivery(cart.storeId, address.location)?.let { quote ->
+                fee = quote.fee
+                DeliveryUi.Fee(quote.fee.formatBrl(), isFree = quote.fee == Money.ZERO, storeIsOpen = quote.storeIsOpen)
+            } ?: DeliveryUi.OutOfArea
+            emit(delivery)
         }
+            .onEach { delivery ->
+                updateReady { it.copy(delivery = delivery, total = fee?.let { f -> (cart.subtotal + f).formatBrl() }) }
+            }
+            .catch { error ->
+                log.warn("Falha ao calcular a entrega no checkout", error)
+                updateReady { it.copy(delivery = DeliveryUi.Error, total = null) }
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun logIfUnexpected(e: CheckoutException) {
