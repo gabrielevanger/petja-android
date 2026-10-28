@@ -1,4 +1,4 @@
-package io.github.gabrielevanger.petja.feature.orders
+package io.github.gabrielevanger.petja.feature.orders.details
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
@@ -15,73 +15,26 @@ import io.github.gabrielevanger.petja.core.domain.model.StatusChange
 import io.github.gabrielevanger.petja.core.domain.testing.ORDER_TIME
 import io.github.gabrielevanger.petja.core.domain.testing.anOrderDetails
 import io.github.gabrielevanger.petja.core.domain.testing.anOrderSummary
+import io.github.gabrielevanger.petja.feature.orders.label
 import kotlinx.collections.immutable.persistentListOf
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-
 @RunWith(AndroidJUnit4::class)
-class OrdersScreensTest {
+class OrderDetailsScreenTest {
 
     @get:Rule
     val composeRule = createComposeRule()
 
     @Test
-    fun listShowsOrdersAndOpensOne() {
-        var opened: String? = null
-        composeRule.setContent {
-            PetjaTheme {
-                OrdersScreen(
-                    OrdersUiState.Loaded(
-                        persistentListOf(
-                            anOrderSummary(),
-                            anOrderSummary(id = "pedido-2", status = OrderStatus.Canceled).copy(itemCount = 1),
-                        ),
-                    ),
-                    onBack = {},
-                    onOpenOrder = { opened = it },
-                    onRetry = {},
-                    onSignIn = {},
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Aguardando a loja").assertExists()
-        composeRule.onNodeWithText("Cancelado").assertExists()
-        composeRule.onNodeWithText("2 itens", substring = true).assertExists()
-        composeRule.onNodeWithText("1 item", substring = true).assertExists()
-        composeRule.onNodeWithText("Aguardando a loja").performClick()
-        assertEquals("pedido-1", opened)
-    }
-
-    @Test
-    fun listStates() {
-        var signIn = 0
-        composeRule.setContent {
-            PetjaTheme { OrdersScreen(OrdersUiState.NotSignedIn, {}, {}, {}, onSignIn = { signIn++ }) }
-        }
-
-        composeRule.onNodeWithText("Entrar").performClick()
-        assertEquals(1, signIn)
-    }
-
-    @Test
-    fun emptyList() {
-        composeRule.setContent { PetjaTheme { OrdersScreen(OrdersUiState.Loaded(persistentListOf()), {}, {}, {}, {}) } }
-
-        composeRule.onNodeWithText("Você ainda não fez nenhum pedido.").assertExists()
-    }
-
-    @Test
     fun detailsOfAPendingOrder() {
-        var cancel = 0
-        var reorder = 0
+        val actions = mutableListOf<OrderDetailsAction>()
         composeRule.setContent {
             PetjaTheme {
                 OrderDetailsScreen(
                     OrderDetailsUiState.Loaded(anOrderDetails()),
-                    OrderDetailsActions(onAskCancel = { cancel++ }, onReorder = { reorder++ }),
+                    onAction = { actions += it },
                 )
             }
         }
@@ -96,8 +49,10 @@ class OrdersScreensTest {
         composeRule.onNodeWithText("Dinheiro · troco para R$ 100,00").performScrollTo().assertExists()
         composeRule.onNodeWithText("Rua Cerro Corá, 78", substring = true).performScrollTo().assertExists()
         composeRule.onNodeWithText("Observação: Tocar a campainha").performScrollTo().assertExists()
-        assertEquals(1, cancel)
-        assertEquals(1, reorder)
+        assertEquals(
+            listOf(OrderDetailsAction.OnReorderClick, OrderDetailsAction.OnCancelClick),
+            actions.filter { it == OrderDetailsAction.OnReorderClick || it == OrderDetailsAction.OnCancelClick },
+        )
     }
 
     @Test
@@ -115,8 +70,9 @@ class OrdersScreensTest {
         composeRule.setContent {
             PetjaTheme {
                 OrderDetailsScreen(
-                    OrderDetailsUiState.Loaded(order, confirmingCancel = true, message = OrderMessage.CannotCancel),
-                    OrderDetailsActions(onConfirmCancel = { confirmed++ }),
+                    OrderDetailsUiState.Loaded(order, confirmingCancel = true),
+                    onAction = { if (it == OrderDetailsAction.OnConfirmCancel) confirmed++ },
+                    message = OrderMessage.CannotCancel,
                 )
             }
         }
@@ -147,7 +103,9 @@ class OrdersScreensTest {
     fun detailStates() {
         var retries = 0
         composeRule.setContent {
-            PetjaTheme { OrderDetailsScreen(OrderDetailsUiState.Error, OrderDetailsActions(onRetry = { retries++ })) }
+            PetjaTheme {
+                OrderDetailsScreen(OrderDetailsUiState.Error, { if (it == OrderDetailsAction.OnRetryClick) retries++ })
+            }
         }
 
         composeRule.onNodeWithText("Tentar de novo").performClick()
@@ -161,7 +119,7 @@ class OrdersScreensTest {
                 Column {
                     OrderDetailsScreen(
                         OrderDetailsUiState.Loaded(anOrderDetails(payment = PaymentChoice.CardOnDelivery)),
-                        OrderDetailsActions(),
+                        onAction = {},
                     )
                 }
             }

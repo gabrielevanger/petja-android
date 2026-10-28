@@ -3,6 +3,8 @@ package io.github.gabrielevanger.petja.feature.orders
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import io.github.gabrielevanger.petja.feature.orders.details.OrderDetailsRoute
+import io.github.gabrielevanger.petja.feature.orders.list.OrdersRoute
 import kotlinx.serialization.Serializable
 
 @Serializable
