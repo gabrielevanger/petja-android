@@ -1,4 +1,4 @@
-package io.github.gabrielevanger.petja.feature.account
+package io.github.gabrielevanger.petja.feature.account.form
 
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
@@ -18,10 +18,10 @@ import kotlinx.coroutines.launch
 enum class Field { Name, Email, Password, PasswordConfirmation }
 
 /**
- * Estado comum dos formulários de conta.
+ * Estado comum dos formulários de conta (entrar, criar conta, esqueci a senha e senha nova).
  *
  * @property fieldErrors aparecem só depois da primeira tentativa de enviar, para não acusar erro enquanto a pessoa digita.
- * @property result o que a tela mostra ou faz depois de dar certo; null enquanto não terminou.
+ * @property result o que a tela mostra depois de dar certo; null enquanto não terminou.
  */
 @Immutable
 data class FormUiState<R>(
@@ -36,7 +36,8 @@ data class FormUiState<R>(
 
 /**
  * Base dos formulários: guarda os campos, valida antes de enviar e traduz falhas em [AccountError].
- * Cada formulário diz quais regras conferir e o que fazer ao enviar.
+ * Cada formulário diz quais regras conferir, o que fazer ao enviar e, em [onSuccess], que evento mandar.
+ * As Actions de cada tela chamam [change] e [submit].
  */
 abstract class AccountFormViewModel<R>(private val log: DiagnosticLog) : ViewModel() {
     private val _state = MutableStateFlow(FormUiState<R>())
@@ -48,12 +49,15 @@ abstract class AccountFormViewModel<R>(private val log: DiagnosticLog) : ViewMod
 
     protected abstract suspend fun send(values: Map<Field, String>): R
 
-    fun onChange(field: Field, value: String) = _state.update {
+    /** Chamado depois de dar certo, com o resultado já no estado. */
+    protected open fun onSuccess(result: R) = Unit
+
+    protected fun change(field: Field, value: String) = _state.update {
         val values = it.values + (field to value)
         it.copy(values = values, fieldErrors = if (submitted) validate(values) else emptyMap(), error = null)
     }
 
-    fun submit() {
+    protected fun submit() {
         if (_state.value.submitting) return
         submitted = true
         val values = _state.value.values
@@ -65,6 +69,7 @@ abstract class AccountFormViewModel<R>(private val log: DiagnosticLog) : ViewMod
             try {
                 val result = send(values)
                 _state.update { it.copy(submitting = false, result = result) }
+                onSuccess(result)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: AccountException) {

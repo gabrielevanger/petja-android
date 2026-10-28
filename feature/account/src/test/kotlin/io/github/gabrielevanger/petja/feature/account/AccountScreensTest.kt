@@ -18,6 +18,19 @@ import io.github.gabrielevanger.petja.core.domain.account.AccountState
 import io.github.gabrielevanger.petja.core.domain.account.FieldError
 import io.github.gabrielevanger.petja.core.domain.account.SignUpResult
 import io.github.gabrielevanger.petja.core.domain.testing.ANA
+import io.github.gabrielevanger.petja.feature.account.forgotpassword.ForgotPasswordAction
+import io.github.gabrielevanger.petja.feature.account.forgotpassword.ForgotPasswordScreen
+import io.github.gabrielevanger.petja.feature.account.form.Field
+import io.github.gabrielevanger.petja.feature.account.form.FormUiState
+import io.github.gabrielevanger.petja.feature.account.home.AccountAction
+import io.github.gabrielevanger.petja.feature.account.home.AccountScreen
+import io.github.gabrielevanger.petja.feature.account.home.AccountUiState
+import io.github.gabrielevanger.petja.feature.account.resetpassword.ResetPasswordAction
+import io.github.gabrielevanger.petja.feature.account.resetpassword.ResetPasswordScreen
+import io.github.gabrielevanger.petja.feature.account.signin.SignInAction
+import io.github.gabrielevanger.petja.feature.account.signin.SignInScreen
+import io.github.gabrielevanger.petja.feature.account.signup.SignUpAction
+import io.github.gabrielevanger.petja.feature.account.signup.SignUpScreen
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -35,7 +48,12 @@ class AccountScreensTest {
     fun signedOutOffersSignInAndSignUp() {
         var signIn = 0
         var signUp = 0
-        show { AccountScreen(AccountState.SignedOut, null, {}, { signIn++ }, { signUp++ }, {}) }
+        show {
+            AccountScreen(AccountUiState(AccountState.SignedOut)) {
+                if (it == AccountAction.OnSignInClick) signIn++
+                if (it == AccountAction.OnSignUpClick) signUp++
+            }
+        }
 
         composeRule.onNodeWithText("Entrar").performClick()
         composeRule.onNodeWithText("Criar conta").performClick()
@@ -48,8 +66,10 @@ class AccountScreensTest {
         var signOut = 0
         var orders = 0
         show {
-            AccountScreen(AccountState.SignedIn(ANA), AccountNotice.EmailConfirmed, {
-            }, {}, {}, { signOut++ }, { orders++ })
+            AccountScreen(AccountUiState(AccountState.SignedIn(ANA), AccountNotice.EmailConfirmed)) {
+                if (it == AccountAction.OnSignOutClick) signOut++
+                if (it == AccountAction.OnOrdersClick) orders++
+            }
         }
 
         composeRule.onNodeWithText("E-mail confirmado. Sua conta está pronta.").assertExists()
@@ -64,7 +84,9 @@ class AccountScreensTest {
     fun storeTeamSeesTheStoreModeShortcut() {
         var storeMode = 0
         show {
-            AccountScreen(AccountState.SignedIn(ANA), null, {}, {}, {}, {}, onStoreMode = { storeMode++ })
+            AccountScreen(AccountUiState(AccountState.SignedIn(ANA), canOperateStore = true)) {
+                if (it == AccountAction.OnStoreModeClick) storeMode++
+            }
         }
 
         composeRule.onNodeWithText("Modo lojista").performScrollTo().performClick()
@@ -74,7 +96,8 @@ class AccountScreensTest {
     @Test
     fun accountWithoutNameAndOtherNotices() {
         show {
-            AccountScreen(AccountState.SignedIn(ANA.copy(fullName = null)), AccountNotice.LinkExpired, {}, {}, {}, {})
+            AccountScreen(AccountUiState(AccountState.SignedIn(ANA.copy(fullName = null)), AccountNotice.LinkExpired)) {
+            }
         }
 
         composeRule.onNodeWithText("Olá!").assertExists()
@@ -83,7 +106,7 @@ class AccountScreensTest {
 
     @Test
     fun loadingAccountAndPasswordChangedNotice() {
-        show { AccountScreen(AccountState.Loading, AccountNotice.PasswordChanged, {}, {}, {}, {}) }
+        show { AccountScreen(AccountUiState(AccountState.Loading, AccountNotice.PasswordChanged)) {} }
 
         composeRule.onNodeWithText("Senha alterada.").assertExists()
         composeRule.onNodeWithText("Carregando sua conta").assertExists()
@@ -97,7 +120,12 @@ class AccountScreensTest {
             fieldErrors = mapOf(Field.Email to FieldError.InvalidEmail, Field.Password to FieldError.Required),
             error = AccountError.InvalidCredentials,
         )
-        show { SignInScreen(state, {}, { field, value -> typed = field to value }, {}, { forgot++ }, {}) }
+        show {
+            SignInScreen(state) {
+                if (it is SignInAction.OnFieldChange) typed = it.field to it.value
+                if (it == SignInAction.OnForgotPasswordClick) forgot++
+            }
+        }
 
         composeRule.onNodeWithText("Confira o e-mail.").assertExists()
         composeRule.onNodeWithText("Preencha este campo.").assertExists()
@@ -110,7 +138,7 @@ class AccountScreensTest {
 
     @Test
     fun submittingDisablesTheButton() {
-        show { SignInScreen(FormUiState(submitting = true), {}, { _, _ -> }, {}, {}, {}) }
+        show { SignInScreen(FormUiState(submitting = true)) {} }
 
         composeRule.onNode(hasText("Entrar") and hasClickAction()).assertIsNotEnabled()
     }
@@ -142,10 +170,7 @@ class AccountScreensTest {
                         Field.Password to FieldError.PasswordTooShort,
                     ),
                 ),
-                {},
-                { _, _ -> },
-                { submitted++ },
-            )
+            ) { if (it == SignUpAction.OnSubmitClick) submitted++ }
         }
 
         composeRule.onNodeWithText("Escreva seu nome.").assertExists()
@@ -162,10 +187,7 @@ class AccountScreensTest {
                     values = mapOf(Field.Email to "bia@teste.local "),
                     result = SignUpResult.ConfirmationEmailSent,
                 ),
-                {},
-                { _, _ -> },
-                {},
-            )
+            ) {}
         }
 
         composeRule.onNodeWithText("Enviamos um link para bia@teste.local", substring = true).assertExists()
@@ -174,8 +196,7 @@ class AccountScreensTest {
     @Test
     fun forgotPasswordBeforeAndAfterSending() {
         show {
-            ForgotPasswordScreen(FormUiState(values = mapOf(Field.Email to "ana@teste.local"), result = Unit), {
-            }, { _, _ -> }, {})
+            ForgotPasswordScreen(FormUiState(values = mapOf(Field.Email to "ana@teste.local"), result = Unit)) {}
         }
 
         composeRule.onNodeWithText("Se houver uma conta com ana@teste.local", substring = true).assertExists()
@@ -184,7 +205,7 @@ class AccountScreensTest {
     @Test
     fun forgotPasswordForm() {
         var submitted = 0
-        show { ForgotPasswordScreen(FormUiState(), {}, { _, _ -> }, { submitted++ }) }
+        show { ForgotPasswordScreen(FormUiState()) { if (it == ForgotPasswordAction.OnSubmitClick) submitted++ } }
 
         composeRule.onNodeWithText("Enviar link").performClick()
         assertEquals(1, submitted)
@@ -196,10 +217,7 @@ class AccountScreensTest {
         show {
             ResetPasswordScreen(
                 FormUiState(fieldErrors = mapOf(Field.PasswordConfirmation to FieldError.PasswordsDoNotMatch)),
-                {},
-                { _, _ -> },
-                { submitted++ },
-            )
+            ) { if (it == ResetPasswordAction.OnSubmitClick) submitted++ }
         }
 
         composeRule.onNodeWithText("As senhas não são iguais.").assertExists()
