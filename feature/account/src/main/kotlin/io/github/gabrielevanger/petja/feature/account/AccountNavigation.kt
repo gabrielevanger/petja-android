@@ -3,6 +3,11 @@ package io.github.gabrielevanger.petja.feature.account
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import io.github.gabrielevanger.petja.feature.account.forgotpassword.ForgotPasswordRoute
+import io.github.gabrielevanger.petja.feature.account.home.AccountRoute
+import io.github.gabrielevanger.petja.feature.account.resetpassword.ResetPasswordRoute
+import io.github.gabrielevanger.petja.feature.account.signin.SignInRoute
+import io.github.gabrielevanger.petja.feature.account.signup.SignUpRoute
 import kotlinx.serialization.Serializable
 
 /** Aviso mostrado no topo da tela da conta ao chegar por um link de e-mail ou depois de trocar a senha. */
