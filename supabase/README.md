@@ -10,6 +10,8 @@ supabase/
     ..._functions.sql               regras de negócio (RPC), gatilhos e permissões
     ..._rls.sql                     políticas de Row Level Security
     ..._realtime_storage_cron.sql   Realtime, bucket de fotos e cancelamento automático
+    ..._addresses_api.sql           endereços do cliente (my_addresses, add_address)
+    ..._security_hardening.sql      limites de tamanho e quantidade, tetos por conta, equipe da loja
   seed.sql                          dados fictícios de Boa Vista
   dev/claim_store.sql               liga a sua conta a uma loja (admin + dono)
   dev/advance_order.sql             anda um pedido para a próxima etapa, como a loja faria
@@ -111,7 +113,30 @@ A mensagem do erro é um código estável para o app traduzir; o `detail` traz o
 | `reason_required` | Faltou o motivo |
 | `courier_not_found`, `user_not_found` | Entregador ou e-mail não encontrado |
 
-## Tempo real
+## Segurança
+
+**Funções `SECURITY DEFINER`.** O Supabase avisa (lint 0029) que `place_order`, `transition_order`,
+`assign_courier`, `update_courier_location`, `add_store_member` e `store_team` rodam com o dono das
+tabelas e podem ser chamadas por quem está logado. É de propósito: cada uma confere quem chama
+(`auth.uid()`) e o que essa pessoa pode fazer antes de agir, e é o único caminho para o que a RLS não
+deixa fazer direto (criar pedido, mudar etapa, ver a equipe). Anônimo não executa nenhuma delas.
+Função nova desse tipo segue a mesma regra: conferir a permissão logo no começo e liberar só para
+`authenticated`.
+
+**Limites que valem para qualquer caminho** (ficam nas tabelas, não só nas funções):
+
+| O quê | Limite |
+|---|---|
+| Textos | nome de pessoa 120, telefone 30, endereço até 150 por campo, observação do pedido 500, motivo 300, produto 150 (descrição 2000) |
+| Quantidade por item do pedido | até 99 |
+| Endereços por conta | até 20 (`too_many_addresses`) |
+| Pedidos aguardando a loja, por cliente | até 5 (`too_many_pending_orders`) |
+| Coordenadas | latitude de -90 a 90, longitude de -180 a 180 (`invalid_location`) |
+
+**Equipe da loja.** O perfil de outra pessoa não é lido direto por ninguém além de admin. Dono e
+atendente veem os membros pela função `store_team(store_id)`, que devolve só id, nome e papel.
+
+
 - **Status do pedido:** o app escuta `orders` com `postgresChanges`. O Realtime respeita a RLS.
 - **Entregador no mapa:** o app do cliente escuta `courier_locations` filtrando pelo `order_id`.
   Cada envio do entregador sobrescreve a mesma linha, então a tabela fica sempre pequena.

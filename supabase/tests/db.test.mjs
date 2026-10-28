@@ -160,7 +160,12 @@ await expectError('customer cannot cancel after accepted', U.ana, T, [order.id, 
 await expectError('customer cannot add member', U.ana, `select * from add_store_member($1,$2,'courier')`, [S1, 'moto@teste.local'], 'forbidden')
 await expectError('unknown email', U.dono, `select * from add_store_member($1,$2,'courier')`, [S1, 'ninguem@teste.local'], 'user_not_found')
 await as(U.dono, `select * from add_store_member($1,$2,'courier')`, [S1, 'MOTO@teste.local'])
-check('owner sees courier profile', (await as(U.dono, 'select full_name from profiles where id=$1', [U.moto])).length === 1)
+const team = await as(U.dono, 'select profile_id, full_name, role from store_team($1)', [S1])
+check('owner sees the team by store_team', team.some(m => m.profile_id === U.moto && m.full_name === 'MOTO' && m.role === 'courier'))
+check('team has no phone or admin flag', team.length > 0 && !('phone' in team[0]) && !('is_admin' in team[0]))
+check('owner no longer reads member profiles directly', (await as(U.dono, 'select id from profiles where id=$1', [U.moto])).length === 0)
+await expectError('customer cannot list a store team', U.ana, 'select * from store_team($1)', [S1], 'forbidden')
+await expectError('anon cannot list a store team', null, 'select * from store_team($1)', [S1], 'permission denied')
 await expectError('cannot assign non courier', U.dono, 'select * from assign_courier($1,$2)', [order.id, U.bia], 'courier_not_found')
 const [assigned] = await as(U.dono, 'select * from assign_courier($1,$2)', [order.id, U.moto])
 check('courier assigned', assigned.courier_name === 'MOTO')
@@ -222,6 +227,49 @@ await as(U.dono, `insert into product_variants (product_id, label, price_cents, 
 await as(U.dono, `update products set is_active=false where id=$1`, [np.id])
 check('paused product hidden from customers', (await as(U.ana, 'select id from products where id=$1', [np.id])).length === 0)
 check('paused product visible to owner', (await as(U.dono, 'select id from products where id=$1', [np.id])).length === 1)
+
+// --- Security hardening (20261028000001)
+await expectError('latitude out of range', U.bia, `select * from add_address('Rua X', '1', 'Centro', 200, -60.67)`, [], 'invalid_location')
+await expectError('storefront with invalid point', null, 'select * from stores_near($1,$2)', [2.82, -999], 'invalid_location')
+await expectError('street too long', U.bia, `select * from add_address($1, '1', 'Centro', 2.82, -60.67)`, ['R'.repeat(151)], 'addresses_text_length')
+await expectError('direct address insert also limited', U.bia,
+  `insert into addresses (profile_id, street, number, neighborhood, location) values ($1, 'Rua', $2, 'Centro', private.make_point(2.82,-60.67))`,
+  [U.bia, '9'.repeat(21)], 'addresses_text_length')
+await expectError('profile name too long', U.bia, 'update profiles set full_name = $1 where id = $2', ['B'.repeat(121), U.bia], 'profiles_text_length')
+// A essa altura o estoque dos itens de teste já acabou; o limite é conferido direto na tabela.
+try {
+  await q('update orders set notes = $1 where id = $2', ['n'.repeat(501), orderFromNew.id])
+  check('order notes too long', false, 'no error')
+} catch (e) {
+  check('order notes too long', e.message.includes('orders_text_length'), e.message)
+}
+// Os itens só entram pelo place_order; o limite da tabela é conferido direto, como administrador.
+try {
+  await q(`insert into order_items (order_id, variant_id, product_name, variant_label, unit_price_cents, quantity)
+    select $1, v.id, 'x', 'y', 100, 100 from product_variants v limit 1`, [orderFromNew.id])
+  check('quantity above 99', false, 'no error')
+} catch (e) {
+  check('quantity above 99', e.message.includes('order_items_quantity_max'), e.message)
+}
+
+for (let i = 0; i < 20; i++) {
+  await as(U.moto, `select * from add_address($1, '1', 'Centro', 2.82, -60.67)`, [`Rua ${i}`])
+}
+await expectError('at most 20 addresses per account', U.moto, `select * from add_address('Rua 21', '1', 'Centro', 2.82, -60.67)`, [], 'too_many_addresses')
+
+const pendingInsert = `insert into orders (customer_id, store_id, customer_name, street, number_address, neighborhood, location,
+  distance_m, subtotal_cents, delivery_fee_cents, total_cents, payment_method)
+  values ($1, $2, 'DONO', 'Rua', '1', 'Centro', private.make_point(2.82,-60.67), 100, 5000, 500, 5500, 'cash')`
+for (let i = 0; i < 5; i++) await q(pendingInsert, [U.dono, S1])
+try {
+  await q(pendingInsert, [U.dono, S1])
+  check('at most 5 pending orders per customer', false, 'no error')
+} catch (e) {
+  check('at most 5 pending orders per customer', e.message.includes('too_many_pending_orders'), e.message)
+}
+
+check('anon does not see variants of a paused product', (await as(null, 'select id from product_variants where product_id=$1', [np.id])).length === 0)
+check('owner still sees variants of a paused product', (await as(U.dono, 'select id from product_variants where product_id=$1', [np.id])).length === 1)
 
 console.log(failures ? `\n${failures} FAILURE(S)` : '\nALL PASSED')
 process.exit(failures ? 1 : 0)
