@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nada do app vai para o backup na nuvem nem para a transferência entre aparelhos (Android 12+):
+    a sessão do Supabase (preferências) não pode viajar para outro aparelho, e o carrinho e o lugar de
+    entrega (DataStore) se refazem em segundos. Para o Android 11 e anteriores vale o allowBackup="false".
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>
