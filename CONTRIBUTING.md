@@ -102,6 +102,9 @@ StorefrontScreen.kt     Route (liga ViewModel, ciclo de vida e navegação) e Sc
 2. **A carga começa pela tela.** A `Route` manda `OnStart` e `OnStop` com `LifecycleEventEffect`.
    Carga única tem uma guarda (`started`) para a rotação não repetir a busca. O que fica escutando
    (Realtime, carrinho) liga no `OnStart` e cancela o `Job` no `OnStop`.
+   Exceção: quando o estado inteiro é derivado de flows, sem ações que o alterem diretamente (o carrinho
+   combina carrinho, lugar, conta e taxa), use `combine(...).stateIn(viewModelScope, WhileSubscribed(5_000), ...)`.
+   Ele liga e desliga com a tela sozinho, e a tela não precisa mandar `OnStart` nem `OnStop`.
 3. **Cada carga é uma corrente sobre um `Flow`:**
    ```kotlin
    loading?.cancel()
