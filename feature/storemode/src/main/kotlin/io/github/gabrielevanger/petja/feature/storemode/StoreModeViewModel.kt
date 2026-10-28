@@ -15,9 +15,16 @@ import javax.inject.Inject
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -40,19 +47,46 @@ class StoreModeViewModel @Inject constructor(
     /** Última lista conhecida, para descobrir quais pedidos são novos; nula antes da primeira carga. */
     private var lastOrders: List<StoreOrder>? = null
 
-    init {
-        start()
+    private val _events = Channel<StoreModeEvent>(Channel.BUFFERED)
+    val events: Flow<StoreModeEvent> = _events.receiveAsFlow()
+
+    private var started = false
+
+    fun onAction(action: StoreModeAction) {
+        when (action) {
+            StoreModeAction.OnStart -> onStart()
+            StoreModeAction.OnStop -> listening?.cancel()
+            StoreModeAction.OnBackClick -> send(StoreModeEvent.Close)
+            StoreModeAction.OnSignInClick -> send(StoreModeEvent.OpenSignIn)
+            StoreModeAction.OnRetryClick -> start()
+            is StoreModeAction.OnStoreClick -> selectStore(action.storeId)
+            is StoreModeAction.OnOrderAction -> act(action.order, action.action)
+            is StoreModeAction.OnConfirmReason -> confirmReason(action.reason)
+            StoreModeAction.OnDismissReason -> updateLoaded { it.copy(askingReason = null) }
+        }
     }
 
-    fun retry() = start()
+    /**
+     * Na primeira vez carrega as lojas. Nas outras, volta a ouvir a loja aberta e recarrega: pedido que
+     * chegou com a tela fora de vista toca o alerta quando a loja volta.
+     */
+    private fun onStart() {
+        if (!started) {
+            started = true
+            start()
+            return
+        }
+        val state = _uiState.value as? StoreModeUiState.Loaded ?: return
+        listen(state.stores, state.storeId)
+    }
 
-    fun selectStore(storeId: String) {
+    private fun selectStore(storeId: String) {
         val state = _uiState.value as? StoreModeUiState.Loaded ?: return
         if (state.storeId == storeId) return
         open(state.stores, storeId)
     }
 
-    fun act(order: StoreOrder, action: StoreAction) {
+    private fun act(order: StoreOrder, action: StoreAction) {
         if (action.needsReason) {
             updateLoaded { it.copy(askingReason = ReasonRequest(order.id, order.number, action)) }
         } else {
@@ -60,16 +94,12 @@ class StoreModeViewModel @Inject constructor(
         }
     }
 
-    fun confirmReason(reason: String) {
+    private fun confirmReason(reason: String) {
         val request = (_uiState.value as? StoreModeUiState.Loaded)?.askingReason ?: return
         if (reason.isBlank()) return
         updateLoaded { it.copy(askingReason = null) }
         transition(request.orderId, request.action, reason.trim())
     }
-
-    fun dismissReason() = updateLoaded { it.copy(askingReason = null) }
-
-    fun messageShown() = updateLoaded { it.copy(message = null) }
 
     private fun start() {
         _uiState.value = StoreModeUiState.Loading
@@ -89,17 +119,19 @@ class StoreModeViewModel @Inject constructor(
 
     /** Troca de loja: zera a lista conhecida (não apita pelos pedidos da outra) e escuta só a nova. */
     private fun open(stores: ImmutableList<ManagedStore>, storeId: String) {
-        listening?.cancel()
         lastOrders = null
         _uiState.value = StoreModeUiState.Loading
-        listening = viewModelScope.launch {
-            reload(stores, storeId)
-            try {
-                repository.changes(storeId).collect { reload(stores, storeId) }
-            } catch (e: StoreOrderException) {
-                log.warn("Realtime da loja caiu", e)
-            }
-        }
+        listen(stores, storeId)
+    }
+
+    /** Recarrega e liga o Realtime da loja; o OnStop desliga. */
+    private fun listen(stores: ImmutableList<ManagedStore>, storeId: String) {
+        listening?.cancel()
+        listening = repository.changes(storeId)
+            .onStart { emit(Unit) }
+            .onEach { reload(stores, storeId) }
+            .catch { log.warn("Realtime da loja caiu", it) }
+            .launchIn(viewModelScope)
     }
 
     private suspend fun reload(stores: ImmutableList<ManagedStore>, storeId: String) {
@@ -116,7 +148,7 @@ class StoreModeViewModel @Inject constructor(
             // Com a lista já na tela, uma recarga que falha não apaga o que a loja está vendo.
             if (_uiState.value is StoreModeUiState.Loaded) {
                 log.warn("Falha ao atualizar os pedidos da loja", e)
-                updateLoaded { it.copy(message = StoreMessage.ActionFailed) }
+                send(StoreModeEvent.ShowMessage(StoreMessage.ActionFailed))
             } else {
                 fail(e)
             }
@@ -140,7 +172,7 @@ class StoreModeViewModel @Inject constructor(
                         StoreMessage.ActionFailed
                     }
                 }
-                updateLoaded { it.copy(message = message) }
+                send(StoreModeEvent.ShowMessage(message))
             }
             // Recarrega mesmo depois de erro: se outra pessoa já mudou o pedido, a tela se acerta.
             reload(state.stores, state.storeId)
@@ -155,6 +187,10 @@ class StoreModeViewModel @Inject constructor(
             log.warn("Falha ao abrir o modo lojista", e)
             StoreModeUiState.Error
         }
+    }
+
+    private fun send(event: StoreModeEvent) {
+        _events.trySend(event)
     }
 
     private fun updateLoaded(change: (StoreModeUiState.Loaded) -> StoreModeUiState.Loaded) {

@@ -32,15 +32,15 @@ class StoreModeScreenTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private fun show(state: StoreModeUiState, actions: StoreModeActions = StoreModeActions()) =
-        composeRule.setContent { PetjaTheme { StoreModeScreen(state, actions) } }
+    private fun show(state: StoreModeUiState, onAction: (StoreModeAction) -> Unit = {}) =
+        composeRule.setContent { PetjaTheme { StoreModeScreen(state, onAction) } }
 
     @Test
     fun newOrderShowsWhatToPrepareAndTheNextStep() {
         var acted: Pair<String, StoreAction>? = null
         show(
             StoreModeUiState.Loaded(persistentListOf(LAVRADO), LAVRADO.id, persistentListOf(aStoreOrder())),
-            StoreModeActions(onAct = { order, action -> acted = order.id to action }),
+            { if (it is StoreModeAction.OnOrderAction) acted = it.order.id to it.action },
         )
 
         composeRule.onNodeWithText("Petshop Lavrado").assertExists()
@@ -103,7 +103,7 @@ class StoreModeScreenTest {
                 persistentListOf(aStoreOrder()),
                 askingReason = ReasonRequest("pedido-1", 1, StoreAction.Reject),
             ),
-            StoreModeActions(onConfirmReason = { reason = it }),
+            { if (it is StoreModeAction.OnConfirmReason) reason = it.reason },
         )
 
         composeRule.onNodeWithText("Recusar o pedido #1?").assertExists()
@@ -116,7 +116,7 @@ class StoreModeScreenTest {
     @Test
     fun otherStates() {
         var retried = 0
-        show(StoreModeUiState.Error, StoreModeActions(onRetry = { retried++ }))
+        show(StoreModeUiState.Error) { if (it == StoreModeAction.OnRetryClick) retried++ }
         composeRule.onNodeWithText("Tentar de novo").performClick()
         assertEquals(1, retried)
     }
@@ -130,7 +130,7 @@ class StoreModeScreenTest {
     @Test
     fun noStoreAndSignedOut() {
         var signIn = 0
-        show(StoreModeUiState.NotSignedIn, StoreModeActions(onSignIn = { signIn++ }))
+        show(StoreModeUiState.NotSignedIn) { if (it == StoreModeAction.OnSignInClick) signIn++ }
         composeRule.onNodeWithText("Entrar").performClick()
         assertEquals(1, signIn)
     }

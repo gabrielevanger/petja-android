@@ -1,5 +1,6 @@
 package io.github.gabrielevanger.petja.feature.storemode
 
+import app.cash.turbine.test
 import io.github.gabrielevanger.petja.core.domain.DiagnosticLog
 import io.github.gabrielevanger.petja.core.domain.model.OrderStatus
 import io.github.gabrielevanger.petja.core.domain.storemode.ManagedStore
@@ -36,7 +37,10 @@ class StoreModeViewModelTest {
     @AfterEach
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() = StoreModeViewModel(repository, { alerts++ }, log)
+    /** Como a tela faz: o ViewModel só carrega e liga o Realtime quando a tela manda OnStart. */
+    private fun viewModel() = StoreModeViewModel(repository, {
+        alerts++
+    }, log).apply { onAction(StoreModeAction.OnStart) }
 
     private fun StoreModeViewModel.loaded() = assertInstanceOf(StoreModeUiState.Loaded::class.java, uiState.value)
 
@@ -73,7 +77,7 @@ class StoreModeViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.act(viewModel.loaded().orders.single(), StoreAction.Accept)
+        viewModel.onAction(StoreModeAction.OnOrderAction(viewModel.loaded().orders.single(), StoreAction.Accept))
         // Trava os botões na hora do toque, antes de o servidor responder.
         assertEquals("pedido-1", viewModel.loaded().working)
         advanceUntilIdle()
@@ -89,15 +93,15 @@ class StoreModeViewModelTest {
         advanceUntilIdle()
         val order = viewModel.loaded().orders.single()
 
-        viewModel.act(order, StoreAction.Reject)
+        viewModel.onAction(StoreModeAction.OnOrderAction(order, StoreAction.Reject))
         assertEquals(ReasonRequest("pedido-1", 1, StoreAction.Reject), viewModel.loaded().askingReason)
-        viewModel.dismissReason()
+        viewModel.onAction(StoreModeAction.OnDismissReason)
         assertNull(viewModel.loaded().askingReason)
 
-        viewModel.act(order, StoreAction.Reject)
-        viewModel.confirmReason("   ")
+        viewModel.onAction(StoreModeAction.OnOrderAction(order, StoreAction.Reject))
+        viewModel.onAction(StoreModeAction.OnConfirmReason("   "))
         assertEquals(StoreAction.Reject, viewModel.loaded().askingReason?.action, "motivo em branco não vale")
-        viewModel.confirmReason("  Sem estoque ")
+        viewModel.onAction(StoreModeAction.OnConfirmReason("  Sem estoque "))
         advanceUntilIdle()
 
         assertNull(viewModel.loaded().askingReason)
@@ -110,22 +114,22 @@ class StoreModeViewModelTest {
         advanceUntilIdle()
         val order = viewModel.loaded().orders.single()
 
-        repository.failWith = StoreOrderError.InvalidTransition
-        viewModel.act(order, StoreAction.Accept)
-        advanceUntilIdle()
-        assertEquals(StoreMessage.OutOfDate, viewModel.loaded().message)
-        viewModel.messageShown()
-        assertNull(viewModel.loaded().message)
+        viewModel.events.test {
+            repository.failWith = StoreOrderError.InvalidTransition
+            viewModel.onAction(StoreModeAction.OnOrderAction(order, StoreAction.Accept))
+            advanceUntilIdle()
+            assertEquals(StoreModeEvent.ShowMessage(StoreMessage.OutOfDate), awaitItem())
 
-        repository.failWith = StoreOrderError.NotAllowed
-        viewModel.act(order, StoreAction.Accept)
-        advanceUntilIdle()
-        assertEquals(StoreMessage.NotAllowed, viewModel.loaded().message)
+            repository.failWith = StoreOrderError.NotAllowed
+            viewModel.onAction(StoreModeAction.OnOrderAction(order, StoreAction.Accept))
+            advanceUntilIdle()
+            assertEquals(StoreModeEvent.ShowMessage(StoreMessage.NotAllowed), awaitItem())
 
-        repository.failWith = StoreOrderError.Network
-        viewModel.act(order, StoreAction.Accept)
-        advanceUntilIdle()
-        assertEquals(StoreMessage.ActionFailed, viewModel.loaded().message)
+            repository.failWith = StoreOrderError.Network
+            viewModel.onAction(StoreModeAction.OnOrderAction(order, StoreAction.Accept))
+            advanceUntilIdle()
+            assertEquals(StoreModeEvent.ShowMessage(StoreMessage.ActionFailed), awaitItem())
+        }
         assertEquals(listOf("Falha ao mudar a etapa do pedido"), warnings)
     }
 
@@ -135,8 +139,8 @@ class StoreModeViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        viewModel.selectStore("store-1")
-        viewModel.selectStore("store-2")
+        viewModel.onAction(StoreModeAction.OnStoreClick("store-1"))
+        viewModel.onAction(StoreModeAction.OnStoreClick("store-2"))
         advanceUntilIdle()
 
         assertEquals("store-2", viewModel.loaded().storeId)
@@ -161,7 +165,7 @@ class StoreModeViewModelTest {
         advanceUntilIdle()
         assertEquals(StoreModeUiState.Error, failing.uiState.value)
 
-        failing.retry()
+        failing.onAction(StoreModeAction.OnRetryClick)
         advanceUntilIdle()
         assertEquals("Petshop Lavrado", failing.loaded().storeName)
     }
@@ -171,11 +175,41 @@ class StoreModeViewModelTest {
         val viewModel = viewModel()
         advanceUntilIdle()
 
-        repository.failWith = StoreOrderError.Network
-        repository.emitChange()
+        viewModel.events.test {
+            repository.failWith = StoreOrderError.Network
+            repository.emitChange()
+            advanceUntilIdle()
+            assertEquals(StoreModeEvent.ShowMessage(StoreMessage.ActionFailed), awaitItem())
+        }
+        assertEquals(1, viewModel.loaded().orders.size)
+    }
+
+    @Test
+    fun `stop pauses realtime and an order that arrived meanwhile rings on return`() = runTest(dispatcher) {
+        val viewModel = viewModel()
         advanceUntilIdle()
 
-        assertEquals(1, viewModel.loaded().orders.size)
-        assertEquals(StoreMessage.ActionFailed, viewModel.loaded().message)
+        viewModel.onAction(StoreModeAction.OnStop)
+        repository.orders = listOf(aStoreOrder(id = "pedido-2", number = 2)) + repository.orders
+        repository.emitChange()
+        advanceUntilIdle()
+        assertEquals(1, viewModel.loaded().orders.size, "parada, a tela não ouve o Realtime")
+        assertEquals(0, alerts)
+
+        viewModel.onAction(StoreModeAction.OnStart)
+        advanceUntilIdle()
+        assertEquals(2, viewModel.loaded().orders.size)
+        assertEquals(1, alerts, "o pedido que chegou enquanto a tela estava fora toca ao voltar")
+    }
+
+    @Test
+    fun `back and sign in become events`() = runTest(dispatcher) {
+        val viewModel = viewModel()
+        viewModel.events.test {
+            viewModel.onAction(StoreModeAction.OnBackClick)
+            assertEquals(StoreModeEvent.Close, awaitItem())
+            viewModel.onAction(StoreModeAction.OnSignInClick)
+            assertEquals(StoreModeEvent.OpenSignIn, awaitItem())
+        }
     }
 }
