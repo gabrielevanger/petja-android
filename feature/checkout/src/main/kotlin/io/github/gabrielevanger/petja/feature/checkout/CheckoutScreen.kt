@@ -28,6 +28,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.gabrielevanger.petja.core.designsystem.R as DesignR
 import io.github.gabrielevanger.petja.core.designsystem.component.BadgeTone
@@ -46,6 +48,7 @@ import io.github.gabrielevanger.petja.core.designsystem.theme.PetjaTheme
 import io.github.gabrielevanger.petja.core.designsystem.theme.highlight
 import io.github.gabrielevanger.petja.core.domain.checkout.CheckoutError
 import io.github.gabrielevanger.petja.core.ui.BackTopBar
+import io.github.gabrielevanger.petja.core.ui.CollectEvents
 import io.github.gabrielevanger.petja.core.ui.dotSeparated
 
 @Composable
@@ -56,59 +59,39 @@ fun CheckoutRoute(
     viewModel: CheckoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val placed = (state as? CheckoutUiState.Ready)?.placed
-    LaunchedEffect(placed) { placed?.let(onPlaced) }
-    CheckoutScreen(
-        state = state,
-        actions = CheckoutActions(
-            onBack = onBack,
-            onSignIn = onSignIn,
-            onSelectAddress = viewModel::selectAddress,
-            onNewAddress = viewModel::showNewAddress,
-            onCancelNewAddress = viewModel::cancelNewAddress,
-            onAddressChange = viewModel::onAddressChange,
-            onSaveAddress = viewModel::saveAddress,
-            onSelectPayment = viewModel::selectPayment,
-            onChangeForChange = viewModel::onChangeForChange,
-            onNotesChange = viewModel::onNotesChange,
-            onSubmit = viewModel::submit,
-        ),
-    )
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onAction(CheckoutAction.OnStart) }
+    CollectEvents(viewModel.events) { event ->
+        when (event) {
+            CheckoutEvent.Close -> onBack()
+            CheckoutEvent.OpenSignIn -> onSignIn()
+            is CheckoutEvent.OrderPlaced -> onPlaced(event.order)
+        }
+    }
+    CheckoutScreen(state = state, onAction = viewModel::onAction)
 }
 
-/** Ações da tela agrupadas, para a assinatura do Composable não virar uma lista de doze parâmetros. */
-class CheckoutActions(
-    val onBack: () -> Unit = {},
-    val onSignIn: () -> Unit = {},
-    val onSelectAddress: (String) -> Unit = {},
-    val onNewAddress: () -> Unit = {},
-    val onCancelNewAddress: () -> Unit = {},
-    val onAddressChange: (AddressField, String) -> Unit = { _, _ -> },
-    val onSaveAddress: () -> Unit = {},
-    val onSelectPayment: (PaymentOption) -> Unit = {},
-    val onChangeForChange: (String) -> Unit = {},
-    val onNotesChange: (String) -> Unit = {},
-    val onSubmit: () -> Unit = {},
-)
-
 @Composable
-fun CheckoutScreen(state: CheckoutUiState, actions: CheckoutActions) {
+fun CheckoutScreen(state: CheckoutUiState, onAction: (CheckoutAction) -> Unit) {
     Scaffold(
         containerColor = PetjaTheme.colors.background,
-        topBar = { BackTopBar(stringResource(R.string.checkout_title), actions.onBack) },
-        bottomBar = { if (state is CheckoutUiState.Ready) PlaceOrderBar(state, actions.onSubmit) },
+        topBar = {
+            BackTopBar(stringResource(R.string.checkout_title), onBack = { onAction(CheckoutAction.OnBackClick) })
+        },
+        bottomBar = {
+            if (state is CheckoutUiState.Ready) PlaceOrderBar(state) { onAction(CheckoutAction.OnPlaceOrderClick) }
+        },
     ) { padding ->
         val modifier = Modifier.padding(padding).consumeWindowInsets(padding)
         when (state) {
             CheckoutUiState.Loading -> LoadingState(stringResource(R.string.checkout_loading), modifier)
             CheckoutUiState.EmptyCart -> MessageState(stringResource(R.string.checkout_empty), modifier)
-            is CheckoutUiState.Ready -> CheckoutForm(state, actions, modifier)
+            is CheckoutUiState.Ready -> CheckoutForm(state, onAction, modifier)
         }
     }
 }
 
 @Composable
-private fun CheckoutForm(state: CheckoutUiState.Ready, actions: CheckoutActions, modifier: Modifier) {
+private fun CheckoutForm(state: CheckoutUiState.Ready, onAction: (CheckoutAction) -> Unit, modifier: Modifier) {
     val spacing = PetjaTheme.spacing
     Column(
         verticalArrangement = Arrangement.spacedBy(spacing.l),
@@ -122,17 +105,17 @@ private fun CheckoutForm(state: CheckoutUiState.Ready, actions: CheckoutActions,
             if (error == CheckoutError.NotSignedIn) {
                 PetjaButton(
                     text = stringResource(R.string.checkout_sign_in),
-                    onClick = actions.onSignIn,
+                    onClick = { onAction(CheckoutAction.OnSignInClick) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
-        Section { AddressSection(state, actions) }
+        Section { AddressSection(state, onAction) }
         HorizontalDivider(thickness = PetjaTheme.sizes.divider)
-        Section { PaymentSection(state, actions) }
+        Section { PaymentSection(state, onAction) }
         FormField(
             value = state.notes,
-            onValueChange = actions.onNotesChange,
+            onValueChange = { onAction(CheckoutAction.OnNotesChange(it)) },
             label = stringResource(R.string.checkout_notes),
             imeAction = ImeAction.Done,
         )
@@ -146,7 +129,7 @@ private fun Section(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun AddressSection(state: CheckoutUiState.Ready, actions: CheckoutActions) {
+private fun AddressSection(state: CheckoutUiState.Ready, onAction: (CheckoutAction) -> Unit) {
     SectionTitle(stringResource(R.string.checkout_address_title))
     val form = state.newAddress
     if (form == null) {
@@ -161,7 +144,7 @@ private fun AddressSection(state: CheckoutUiState.Ready, actions: CheckoutAction
                         null
                     },
                     selected = address.id == state.selectedAddressId,
-                    onSelect = { actions.onSelectAddress(address.id) },
+                    onSelect = { onAction(CheckoutAction.OnAddressClick(address.id)) },
                     // O primeiro é o endereço padrão (pino); os outros, prédio, como no layout.
                     icon = painterResource(
                         if (index ==
@@ -177,17 +160,17 @@ private fun AddressSection(state: CheckoutUiState.Ready, actions: CheckoutAction
         }
         PetjaButton(
             text = stringResource(R.string.checkout_address_new),
-            onClick = actions.onNewAddress,
+            onClick = { onAction(CheckoutAction.OnNewAddressClick) },
             style = PetjaButtonStyle.Text,
             modifier = Modifier.fillMaxWidth(),
         )
     } else {
-        NewAddressFields(form, actions, canCancel = state.addresses.isNotEmpty())
+        NewAddressFields(form, onAction, canCancel = state.addresses.isNotEmpty())
     }
 }
 
 @Composable
-private fun NewAddressFields(form: NewAddressForm, actions: CheckoutActions, canCancel: Boolean) {
+private fun NewAddressFields(form: NewAddressForm, onAction: (CheckoutAction) -> Unit, canCancel: Boolean) {
     val required = stringResource(R.string.checkout_field_required)
     fun error(field: AddressField) = if (field in form.missing) required else null
     AddressInput(
@@ -196,7 +179,7 @@ private fun NewAddressFields(form: NewAddressForm, actions: CheckoutActions, can
         R.string.checkout_field_street,
         error(AddressField.Street),
         form,
-        actions,
+        onAction,
     )
     AddressInput(
         form.number,
@@ -204,18 +187,18 @@ private fun NewAddressFields(form: NewAddressForm, actions: CheckoutActions, can
         R.string.checkout_field_number,
         error(AddressField.Number),
         form,
-        actions,
+        onAction,
     )
-    AddressInput(form.complement, AddressField.Complement, R.string.checkout_field_complement, null, form, actions)
+    AddressInput(form.complement, AddressField.Complement, R.string.checkout_field_complement, null, form, onAction)
     AddressInput(
         form.neighborhood,
         AddressField.Neighborhood,
         R.string.checkout_field_neighborhood,
         error(AddressField.Neighborhood),
         form,
-        actions,
+        onAction,
     )
-    AddressInput(form.reference, AddressField.Reference, R.string.checkout_field_reference, null, form, actions)
+    AddressInput(form.reference, AddressField.Reference, R.string.checkout_field_reference, null, form, onAction)
     Text(
         text = stringResource(R.string.checkout_address_point_note, form.placeName),
         style = PetjaTheme.typography.caption,
@@ -223,14 +206,14 @@ private fun NewAddressFields(form: NewAddressForm, actions: CheckoutActions, can
     )
     PetjaButton(
         text = stringResource(R.string.checkout_address_save),
-        onClick = actions.onSaveAddress,
+        onClick = { onAction(CheckoutAction.OnSaveAddressClick) },
         loading = form.saving,
         modifier = Modifier.fillMaxWidth(),
     )
     if (canCancel) {
         PetjaButton(
             text = stringResource(android.R.string.cancel),
-            onClick = actions.onCancelNewAddress,
+            onClick = { onAction(CheckoutAction.OnCancelNewAddressClick) },
             style = PetjaButtonStyle.Outlined,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -244,11 +227,11 @@ private fun AddressInput(
     @StringRes label: Int,
     error: String?,
     form: NewAddressForm,
-    actions: CheckoutActions,
+    onAction: (CheckoutAction) -> Unit,
 ) {
     FormField(
         value = value,
-        onValueChange = { actions.onAddressChange(field, it) },
+        onValueChange = { onAction(CheckoutAction.OnAddressFieldChange(field, it)) },
         label = stringResource(label),
         error = error,
         enabled = !form.saving,
@@ -256,7 +239,7 @@ private fun AddressInput(
 }
 
 @Composable
-private fun PaymentSection(state: CheckoutUiState.Ready, actions: CheckoutActions) {
+private fun PaymentSection(state: CheckoutUiState.Ready, onAction: (CheckoutAction) -> Unit) {
     SectionTitle(stringResource(R.string.checkout_payment_title))
     Column(verticalArrangement = Arrangement.spacedBy(PetjaTheme.spacing.s), modifier = Modifier.selectableGroup()) {
         PaymentOption.entries.forEach { option ->
@@ -283,7 +266,7 @@ private fun PaymentSection(state: CheckoutUiState.Ready, actions: CheckoutAction
                 title = stringResource(title),
                 details = stringResource(details),
                 selected = state.payment == option,
-                onSelect = { actions.onSelectPayment(option) },
+                onSelect = { onAction(CheckoutAction.OnPaymentClick(option)) },
                 icon = painterResource(icon),
             )
         }
@@ -291,7 +274,7 @@ private fun PaymentSection(state: CheckoutUiState.Ready, actions: CheckoutAction
     if (state.payment == PaymentOption.Cash) {
         FormField(
             value = state.changeFor,
-            onValueChange = actions.onChangeForChange,
+            onValueChange = { onAction(CheckoutAction.OnChangeForChange(it)) },
             label = stringResource(R.string.checkout_change_for),
             error = if (state.changeForInvalid) stringResource(R.string.checkout_change_invalid) else null,
         )
