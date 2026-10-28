@@ -236,7 +236,13 @@ await expectError('direct address insert also limited', U.bia,
   `insert into addresses (profile_id, street, number, neighborhood, location) values ($1, 'Rua', $2, 'Centro', private.make_point(2.82,-60.67))`,
   [U.bia, '9'.repeat(21)], 'addresses_text_length')
 await expectError('profile name too long', U.bia, 'update profiles set full_name = $1 where id = $2', ['B'.repeat(121), U.bia], 'profiles_text_length')
-await expectError('order notes too long', U.bia, PO, [S1, second.id, items, 'cash', null, 'n'.repeat(501), null], 'orders_text_length')
+// A essa altura o estoque dos itens de teste já acabou; o limite é conferido direto na tabela.
+try {
+  await q('update orders set notes = $1 where id = $2', ['n'.repeat(501), orderFromNew.id])
+  check('order notes too long', false, 'no error')
+} catch (e) {
+  check('order notes too long', e.message.includes('orders_text_length'), e.message)
+}
 // Os itens só entram pelo place_order; o limite da tabela é conferido direto, como administrador.
 try {
   await q(`insert into order_items (order_id, variant_id, product_name, variant_label, unit_price_cents, quantity)
