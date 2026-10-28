@@ -1,6 +1,7 @@
-package io.github.gabrielevanger.petja.feature.orders
+package io.github.gabrielevanger.petja.feature.orders.details
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import io.github.gabrielevanger.petja.core.domain.DiagnosticLog
 import io.github.gabrielevanger.petja.core.domain.model.OrderStatus
 import io.github.gabrielevanger.petja.core.domain.orders.OrderError
@@ -11,10 +12,9 @@ import io.github.gabrielevanger.petja.core.domain.testing.FakeStoreRepository
 import io.github.gabrielevanger.petja.core.domain.testing.aProduct
 import io.github.gabrielevanger.petja.core.domain.testing.aVariant
 import io.github.gabrielevanger.petja.core.domain.testing.anOrderDetails
-import io.github.gabrielevanger.petja.core.domain.testing.anOrderSummary
+import io.github.gabrielevanger.petja.feature.orders.ORDER_ID_ARG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -24,13 +24,12 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class OrdersViewModelsTest {
+class OrderDetailsViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val orders = FakeOrderRepository()
     private val carts = FakeCartRepository()
@@ -46,39 +45,18 @@ class OrdersViewModelsTest {
     @AfterEach
     fun tearDown() = Dispatchers.resetMain()
 
+    /** Como a tela faz: o ViewModel só carrega e liga o status ao vivo quando a tela manda OnStart. */
     private fun details() = OrderDetailsViewModel(
         SavedStateHandle(mapOf(ORDER_ID_ARG to "pedido-1")),
         orders,
         ReorderToCart(stores, carts),
         log,
-    )
+    ).apply { onAction(OrderDetailsAction.OnStart) }
 
     private fun OrderDetailsViewModel.loaded() = assertInstanceOf(OrderDetailsUiState.Loaded::class.java, uiState.value)
 
     @Test
-    fun `list loads, handles errors and sign in`() = runTest(dispatcher) {
-        val viewModel = OrdersViewModel(orders, log)
-        assertEquals(OrdersUiState.Loading, viewModel.uiState.value)
-
-        viewModel.load()
-        advanceUntilIdle()
-        assertEquals(listOf(anOrderSummary()), (viewModel.uiState.value as OrdersUiState.Loaded).orders)
-
-        orders.failWith = OrderError.NotSignedIn
-        viewModel.load()
-        advanceUntilIdle()
-        assertEquals(OrdersUiState.NotSignedIn, viewModel.uiState.value)
-        assertTrue(warnings.isEmpty())
-
-        orders.failWith = OrderError.Network
-        viewModel.load()
-        advanceUntilIdle()
-        assertEquals(OrdersUiState.Error, viewModel.uiState.value)
-        assertEquals(1, warnings.size)
-    }
-
-    @Test
-    fun `details load and follow live changes`() = runTest(dispatcher) {
+    fun `loads and follows live changes until the screen stops`() = runTest(dispatcher) {
         val viewModel = details()
         advanceUntilIdle()
         assertEquals(OrderStatus.Pending, viewModel.loaded().order.status)
@@ -86,8 +64,17 @@ class OrdersViewModelsTest {
         orders.details = mapOf("pedido-1" to anOrderDetails(status = OrderStatus.Accepted))
         orders.emitChange()
         advanceUntilIdle()
-
         assertEquals(OrderStatus.Accepted, viewModel.loaded().order.status)
+
+        viewModel.onAction(OrderDetailsAction.OnStop)
+        orders.details = mapOf("pedido-1" to anOrderDetails(status = OrderStatus.Preparing))
+        orders.emitChange()
+        advanceUntilIdle()
+        assertEquals(OrderStatus.Accepted, viewModel.loaded().order.status, "parada, a tela não ouve o Realtime")
+
+        viewModel.onAction(OrderDetailsAction.OnStart)
+        advanceUntilIdle()
+        assertEquals(OrderStatus.Preparing, viewModel.loaded().order.status, "ao voltar, recarrega o que mudou")
     }
 
     @Test
@@ -103,7 +90,7 @@ class OrdersViewModelsTest {
         advanceUntilIdle()
         assertEquals(OrderDetailsUiState.Error, failing.uiState.value)
 
-        failing.retry()
+        failing.onAction(OrderDetailsAction.OnRetryClick)
         advanceUntilIdle()
         failing.loaded()
     }
@@ -125,18 +112,18 @@ class OrdersViewModelsTest {
         val viewModel = details()
         advanceUntilIdle()
 
-        viewModel.askToCancel()
+        viewModel.onAction(OrderDetailsAction.OnCancelClick)
         assertTrue(viewModel.loaded().confirmingCancel)
-        viewModel.dismissCancel()
+        viewModel.onAction(OrderDetailsAction.OnDismissCancel)
         assertFalse(viewModel.loaded().confirmingCancel)
 
-        viewModel.askToCancel()
-        viewModel.confirmCancel()
+        viewModel.onAction(OrderDetailsAction.OnCancelClick)
+        viewModel.onAction(OrderDetailsAction.OnConfirmCancel)
         advanceUntilIdle()
 
         assertEquals(listOf("pedido-1"), orders.canceled)
         assertEquals(OrderStatus.Canceled, viewModel.loaded().order.status)
-        assertNull(viewModel.loaded().message)
+        assertFalse(viewModel.loaded().working)
     }
 
     @Test
@@ -144,16 +131,17 @@ class OrdersViewModelsTest {
         val viewModel = details()
         advanceUntilIdle()
 
-        orders.failWith = OrderError.CannotCancel
-        viewModel.confirmCancel()
-        advanceUntilIdle()
-        assertEquals(OrderMessage.CannotCancel, viewModel.loaded().message)
+        viewModel.events.test {
+            orders.failWith = OrderError.CannotCancel
+            viewModel.onAction(OrderDetailsAction.OnConfirmCancel)
+            advanceUntilIdle()
+            assertEquals(OrderDetailsEvent.ShowMessage(OrderMessage.CannotCancel), awaitItem())
 
-        viewModel.messageShown()
-        orders.failWith = OrderError.Network
-        viewModel.confirmCancel()
-        advanceUntilIdle()
-        assertEquals(OrderMessage.ActionFailed, viewModel.loaded().message)
+            orders.failWith = OrderError.Network
+            viewModel.onAction(OrderDetailsAction.OnConfirmCancel)
+            advanceUntilIdle()
+            assertEquals(OrderDetailsEvent.ShowMessage(OrderMessage.ActionFailed), awaitItem())
+        }
     }
 
     @Test
@@ -161,16 +149,16 @@ class OrdersViewModelsTest {
         val viewModel = details()
         advanceUntilIdle()
 
-        viewModel.reorder()
-        advanceUntilIdle()
-
-        // O evento fica no buffer do canal até a tela ler.
-        viewModel.openCart.first()
-        assertEquals(
-            OrderMessage.ReorderSomeChanged,
-            viewModel.loaded().message,
-            "a GranPlus não existe nesta loja falsa",
-        )
+        viewModel.events.test {
+            viewModel.onAction(OrderDetailsAction.OnReorderClick)
+            advanceUntilIdle()
+            assertEquals(OrderDetailsEvent.OpenCart, awaitItem())
+            assertEquals(
+                OrderDetailsEvent.ShowMessage(OrderMessage.ReorderSomeChanged),
+                awaitItem(),
+                "a GranPlus não existe nesta loja falsa",
+            )
+        }
         assertEquals("1kg", carts.cart.value!!.lines.single().variantId)
     }
 
@@ -180,13 +168,28 @@ class OrdersViewModelsTest {
         val viewModel = details()
         advanceUntilIdle()
 
-        viewModel.reorder()
-        advanceUntilIdle()
-        assertEquals(OrderMessage.ReorderNothing, viewModel.loaded().message)
+        viewModel.events.test {
+            viewModel.onAction(OrderDetailsAction.OnReorderClick)
+            advanceUntilIdle()
+            assertEquals(OrderDetailsEvent.ShowMessage(OrderMessage.ReorderNothing), awaitItem())
 
-        stores.stores = emptyMap()
-        viewModel.reorder()
+            stores.stores = emptyMap()
+            viewModel.onAction(OrderDetailsAction.OnReorderClick)
+            advanceUntilIdle()
+            assertEquals(OrderDetailsEvent.ShowMessage(OrderMessage.ActionFailed), awaitItem())
+        }
+    }
+
+    @Test
+    fun `back and whatsapp become events`() = runTest(dispatcher) {
+        val viewModel = details()
         advanceUntilIdle()
-        assertEquals(OrderMessage.ActionFailed, viewModel.loaded().message)
+
+        viewModel.events.test {
+            viewModel.onAction(OrderDetailsAction.OnBackClick)
+            assertEquals(OrderDetailsEvent.Close, awaitItem())
+            viewModel.onAction(OrderDetailsAction.OnWhatsappClick("5595900000001"))
+            assertTrue((awaitItem() as OrderDetailsEvent.OpenLink).uri.contains("5595900000001"))
+        }
     }
 }

@@ -1,4 +1,4 @@
-package io.github.gabrielevanger.petja.feature.orders
+package io.github.gabrielevanger.petja.feature.orders.details
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -10,41 +10,22 @@ import io.github.gabrielevanger.petja.core.domain.orders.OrderException
 import io.github.gabrielevanger.petja.core.domain.orders.OrderRepository
 import io.github.gabrielevanger.petja.core.domain.orders.ReorderResult
 import io.github.gabrielevanger.petja.core.domain.orders.ReorderToCart
+import io.github.gabrielevanger.petja.core.ui.whatsappLink
+import io.github.gabrielevanger.petja.feature.orders.ORDER_ID_ARG
 import javax.inject.Inject
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-@HiltViewModel
-class OrdersViewModel @Inject constructor(private val orders: OrderRepository, private val log: DiagnosticLog) :
-    ViewModel() {
-
-    private val _uiState = MutableStateFlow<OrdersUiState>(OrdersUiState.Loading)
-    val uiState: StateFlow<OrdersUiState> = _uiState.asStateFlow()
-
-    /** Chamado sempre que a lista aparece (inclusive ao voltar dos detalhes), para os status estarem em dia. */
-    fun load() {
-        viewModelScope.launch {
-            _uiState.value = try {
-                OrdersUiState.Loaded(orders.myOrders().toImmutableList())
-            } catch (e: OrderException) {
-                if (e.error == OrderError.NotSignedIn) {
-                    OrdersUiState.NotSignedIn
-                } else {
-                    log.warn("Falha ao carregar os pedidos", e)
-                    OrdersUiState.Error
-                }
-            }
-        }
-    }
-}
 
 @HiltViewModel
 class OrderDetailsViewModel @Inject constructor(
@@ -59,67 +40,88 @@ class OrderDetailsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<OrderDetailsUiState>(OrderDetailsUiState.Loading)
     val uiState: StateFlow<OrderDetailsUiState> = _uiState.asStateFlow()
 
-    private val _openCart = Channel<Unit>(Channel.BUFFERED)
+    private val _events = Channel<OrderDetailsEvent>(Channel.BUFFERED)
+    val events: Flow<OrderDetailsEvent> = _events.receiveAsFlow()
 
-    /** Depois de "Pedir de novo" com algum item no carrinho, a tela abre o carrinho. */
-    val openCart: Flow<Unit> = _openCart.receiveAsFlow()
+    private var listening: Job? = null
 
-    init {
-        viewModelScope.launch { reload() }
-        listenToChanges()
-    }
+    fun onAction(action: OrderDetailsAction) {
+        when (action) {
+            OrderDetailsAction.OnStart -> onStart()
 
-    fun retry() {
-        _uiState.value = OrderDetailsUiState.Loading
-        viewModelScope.launch { reload() }
-    }
+            OrderDetailsAction.OnStop -> listening?.cancel()
 
-    fun askToCancel() = updateLoaded { it.copy(confirmingCancel = true) }
+            OrderDetailsAction.OnBackClick -> send(OrderDetailsEvent.Close)
 
-    fun dismissCancel() = updateLoaded { it.copy(confirmingCancel = false) }
-
-    fun confirmCancel() {
-        updateLoaded { it.copy(confirmingCancel = false, working = true) }
-        viewModelScope.launch {
-            val message = try {
-                orders.cancel(orderId)
-                null
-            } catch (e: OrderException) {
-                if (e.error == OrderError.CannotCancel) {
-                    OrderMessage.CannotCancel
-                } else {
-                    log.warn("Falha ao cancelar o pedido $orderId", e)
-                    OrderMessage.ActionFailed
-                }
+            OrderDetailsAction.OnRetryClick -> {
+                _uiState.value = OrderDetailsUiState.Loading
+                viewModelScope.launch { reload() }
             }
-            reload()
-            updateLoaded { it.copy(working = false, message = message) }
+
+            OrderDetailsAction.OnCancelClick -> updateLoaded { it.copy(confirmingCancel = true) }
+
+            OrderDetailsAction.OnDismissCancel -> updateLoaded { it.copy(confirmingCancel = false) }
+
+            OrderDetailsAction.OnConfirmCancel -> confirmCancel()
+
+            OrderDetailsAction.OnReorderClick -> reorder()
+
+            is OrderDetailsAction.OnWhatsappClick -> send(OrderDetailsEvent.OpenLink(whatsappLink(action.number)))
         }
     }
 
-    fun reorder() {
+    /**
+     * Na primeira vez carrega o pedido; nas outras recarrega, porque o status pode ter mudado com a tela
+     * fora de vista. Em todas, liga o status ao vivo, que o OnStop desliga.
+     */
+    private fun onStart() {
+        viewModelScope.launch { reload() }
+        listening?.cancel()
+        listening = orders.changes(orderId)
+            .onEach { reload() }
+            .catch { log.warn("Status ao vivo indisponível para o pedido $orderId", it) }
+            .launchIn(viewModelScope)
+    }
+
+    private fun confirmCancel() {
+        updateLoaded { it.copy(confirmingCancel = false, working = true) }
+        viewModelScope.launch {
+            try {
+                orders.cancel(orderId)
+            } catch (e: OrderException) {
+                if (e.error == OrderError.CannotCancel) {
+                    send(OrderDetailsEvent.ShowMessage(OrderMessage.CannotCancel))
+                } else {
+                    log.warn("Falha ao cancelar o pedido $orderId", e)
+                    send(OrderDetailsEvent.ShowMessage(OrderMessage.ActionFailed))
+                }
+            }
+            reload()
+            updateLoaded { it.copy(working = false) }
+        }
+    }
+
+    private fun reorder() {
         val order = (_uiState.value as? OrderDetailsUiState.Loaded)?.order ?: return
         updateLoaded { it.copy(working = true) }
         viewModelScope.launch {
-            val message = try {
+            try {
                 val result = reorderToCart(order)
-                if (result != ReorderResult.NothingAvailable) _openCart.send(Unit)
+                if (result != ReorderResult.NothingAvailable) send(OrderDetailsEvent.OpenCart)
                 when (result) {
-                    ReorderResult.AllAdded -> null
-                    is ReorderResult.SomeChanged -> OrderMessage.ReorderSomeChanged
-                    ReorderResult.NothingAvailable -> OrderMessage.ReorderNothing
+                    ReorderResult.AllAdded -> Unit
+                    is ReorderResult.SomeChanged -> send(OrderDetailsEvent.ShowMessage(OrderMessage.ReorderSomeChanged))
+                    ReorderResult.NothingAvailable -> send(OrderDetailsEvent.ShowMessage(OrderMessage.ReorderNothing))
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 log.warn("Falha ao pedir de novo o pedido $orderId", e)
-                OrderMessage.ActionFailed
+                send(OrderDetailsEvent.ShowMessage(OrderMessage.ActionFailed))
             }
-            updateLoaded { it.copy(working = false, message = message) }
+            updateLoaded { it.copy(working = false) }
         }
     }
-
-    fun messageShown() = updateLoaded { it.copy(message = null) }
 
     private suspend fun reload() {
         val result = try {
@@ -135,17 +137,8 @@ class OrderDetailsViewModel @Inject constructor(
         _uiState.value = result
     }
 
-    /** Cada mudança no pedido recarrega os detalhes; sem Realtime, a tela continua funcionando. */
-    private fun listenToChanges() {
-        viewModelScope.launch {
-            try {
-                orders.changes(orderId).collect { reload() }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.warn("Status ao vivo indisponível para o pedido $orderId", e)
-            }
-        }
+    private fun send(event: OrderDetailsEvent) {
+        _events.trySend(event)
     }
 
     private fun updateLoaded(change: (OrderDetailsUiState.Loaded) -> OrderDetailsUiState.Loaded) =
