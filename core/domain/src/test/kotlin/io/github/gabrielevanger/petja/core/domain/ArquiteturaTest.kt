@@ -1,6 +1,7 @@
 package io.github.gabrielevanger.petja.core.domain
 
 import com.lemonappdev.konsist.api.Konsist
+import com.lemonappdev.konsist.api.ext.list.functions
 import com.lemonappdev.konsist.api.ext.list.withNameEndingWith
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
@@ -65,7 +66,8 @@ class ArquiteturaTest {
         Konsist
             .scopeFromProject()
             .files
-            .filter { arquivo -> arquivo.name.endsWith("UiState.kt") }
+            // No Konsist, name é o nome do arquivo sem a extensão.
+            .filter { arquivo -> arquivo.name.endsWith("UiState") }
             .assertFalse(
                 additionalMessage = "UiState não deve declarar List<...> mutável." +
                     " Use ImmutableList<...> de kotlinx-collections-immutable.",
@@ -78,22 +80,22 @@ class ArquiteturaTest {
     }
 
     /**
-     * Screens são stateless: não devem chamar `hiltViewModel()` nem `viewModel()`
-     * diretamente no corpo do Composable. A instanciação do ViewModel deve ficar
-     * exclusivamente na função Route, que não é chamada de dentro da Screen.
+     * Screens são stateless: só a função Route (que fica no mesmo arquivo *Screen.kt)
+     * pode obter o ViewModel com `hiltViewModel()` ou `viewModel()`. A Screen e as
+     * partes da tela recebem estado e `onAction`.
      */
     @Test
-    fun `Screens sao stateless, nao instanciam ViewModel`() {
+    fun `Screens sao stateless, so a Route obtem o ViewModel`() {
+        val obtemViewModel = Regex("""\b(hiltViewModel|viewModel)\(""")
         Konsist
             .scopeFromProject()
             .files
-            .filter { arquivo -> arquivo.name.endsWith("Screen.kt") }
+            .filter { arquivo -> arquivo.name.endsWith("Screen") }
+            .functions()
+            .filter { funcao -> !funcao.name.endsWith("Route") }
             .assertFalse(
-                additionalMessage = "Arquivos *Screen.kt não devem chamar hiltViewModel() nem viewModel()." +
-                    " Instancie o ViewModel apenas na função Route correspondente.",
-            ) { arquivo ->
-                val conteudo = arquivo.text
-                conteudo.contains("hiltViewModel()") || conteudo.contains("viewModel()")
-            }
+                additionalMessage = "Só a função *Route pode chamar hiltViewModel() ou viewModel()." +
+                    " A Screen recebe o estado e onAction.",
+            ) { funcao -> obtemViewModel.containsMatchIn(funcao.text) }
     }
 }

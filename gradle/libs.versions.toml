@@ -33,7 +33,7 @@ kover = "0.9.11"
 # Versão do motor do ktlint, fixada para o resultado não mudar com o plugin.
 ktlint = "1.8.0"
 konsist = "0.16.1"
-roborazzi = "1.44.0"
+roborazzi = "1.76.0"
 
 # Plataforma Android
 compileSdk = "37"
@@ -109,7 +109,6 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 konsist = { group = "com.lemonappdev", name = "konsist", version.ref = "konsist" }
 roborazzi = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { group = "io.github.takahirom.roborazzi", name = "roborazzi-compose", version.ref = "roborazzi" }
-roborazzi-junit-rule = { group = "io.github.takahirom.roborazzi", name = "roborazzi-junit-rule", version.ref = "roborazzi" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -16,6 +16,8 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
+            // Screenshots na JVM: cria recordRoborazziDebug e verifyRoborazziDebug e lê roborazzi.test.* do Gradle.
+            pluginManager.apply("io.github.takahirom.roborazzi")
             extensions.getByType<CommonExtension>().apply {
                 buildFeatures.compose = true
                 // Robolectric precisa dos recursos do módulo (strings, ícones) para renderizar o Compose na JVM.
@@ -52,7 +54,6 @@ class AndroidComposeConventionPlugin : Plugin<Project> {
                 // Roborazzi: captura screenshots de Composables na JVM via Robolectric.
                 add("testImplementation", libs.library("roborazzi"))
                 add("testImplementation", libs.library("roborazzi-compose"))
-                add("testImplementation", libs.library("roborazzi-junit-rule"))
             }
         }
     }

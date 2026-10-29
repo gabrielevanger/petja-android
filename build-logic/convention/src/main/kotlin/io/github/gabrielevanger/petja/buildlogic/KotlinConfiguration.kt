@@ -37,8 +37,6 @@ internal fun Project.configureUnitTests() {
         add("testRuntimeOnly", libs.library("junit-platform-launcher"))
         add("testImplementation", libs.library("kotlinx-coroutines-test"))
         add("testImplementation", libs.library("turbine"))
-        // Konsist: testes arquiteturais que garantem as convenções do projeto (ex.: camadas, nomes, imports)
-        add("testImplementation", libs.library("konsist"))
     }
     // O código compila para Java 17; os testes executam num JVM mais novo, exigido pelo Robolectric.
     val testLauncher = extensions.getByType<JavaToolchainService>().launcherFor {
@@ -47,8 +45,5 @@ internal fun Project.configureUnitTests() {
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
         javaLauncher.set(testLauncher)
-        System.getProperties().stringPropertyNames()
-            .filter { it.startsWith("roborazzi") }
-            .forEach { key -> systemProperty(key, System.getProperty(key).orEmpty()) }
     }
 }

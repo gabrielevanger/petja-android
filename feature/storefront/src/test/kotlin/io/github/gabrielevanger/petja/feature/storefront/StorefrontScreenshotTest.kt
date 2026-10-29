@@ -3,7 +3,7 @@ package io.github.gabrielevanger.petja.feature.storefront
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.github.takahirom.roborazzi.RoborazziRule
+import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import io.github.gabrielevanger.petja.core.designsystem.theme.PetjaTheme
 import kotlinx.collections.immutable.persistentListOf
@@ -11,30 +11,29 @@ import kotlinx.collections.immutable.toImmutableList
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * Screenshot tests da tela Storefront usando Roborazzi.
  *
  * Para gerar/atualizar as imagens de baseline, execute:
- *   ./gradlew recordRoborazziDebug
+ *   ./scripts/record-screenshots.sh
  *
  * Para verificar regressões visuais contra o baseline, execute:
  *   ./gradlew verifyRoborazziDebug
  *
  * As imagens são salvas em src/test/snapshots/ e devem ser comitadas no repositório.
+ * O modo gráfico nativo é obrigatório: sem ele o Robolectric não desenha pixels e a imagem
+ * vira um diagrama da árvore de semântica.
  */
 @RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(qualifiers = RobolectricDeviceQualifiers.MediumPhone)
 class StorefrontScreenshotTest {
 
     @get:Rule
     val composeRule = createComposeRule()
-
-    @get:Rule
-    val roborazziRule = RoborazziRule(
-        options = RoborazziRule.Options(
-            outputDirectoryPath = "src/test/snapshots",
-        ),
-    )
 
     private val lugares = BoaVistaSamplePlaces.toImmutableList()
 

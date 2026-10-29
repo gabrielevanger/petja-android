@@ -47,7 +47,7 @@ jobs:
         run: ./gradlew ktlintCheck :build-logic:convention:ktlintCheck :app:lintDebug
 
       - name: Testes unitários e visuais (Roborazzi)
-        run: ./gradlew test
+        run: ./gradlew test -Proborazzi.test.verify=true
 
       - name: Publicar diffs de screenshot (em caso de falha)
         if: failure()
