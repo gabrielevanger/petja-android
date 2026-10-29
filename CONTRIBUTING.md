@@ -33,6 +33,10 @@ Ninguém tem exceção, nem quem administra o repositório. Se um dia for precis
 desligue o ruleset pela tela, faça a mudança e ligue de novo. Se um check mudar de nome no
 `.github/workflows/ci.yml`, atualize o nome no ruleset também, ou nenhum PR consegue ser mesclado.
 
+PR que só muda texto (arquivos `.md` e `.github/ISSUE_TEMPLATE/`) pula o build do app e os testes do banco:
+os dois checks aparecem como *skipped*, o que o ruleset aceita. Basta um arquivo de outro tipo no PR para
+tudo rodar. O merge na `main` sempre roda o CI completo.
+
 ## Mensagens de commit
 
 [Conventional Commits](https://www.conventionalcommits.org/pt-br/) em português, no imperativo da 3ª pessoa:
