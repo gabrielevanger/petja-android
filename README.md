@@ -1,59 +1,16 @@
-<div align="center">
+<h1 align="center">PetJá</h1>
 
-# PetJá
+<p align="center">
+  <a href="https://github.com/gabrielevanger/petja-android/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/gabrielevanger/petja-android/actions/workflows/ci.yml/badge.svg?branch=main"/></a>
+  <a href="https://developer.android.com/tools/releases/platforms"><img alt="API" src="https://img.shields.io/badge/API-26%2B-brightgreen.svg?style=flat"/></a>
+  <a href="https://kotlinlang.org"><img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.4-7F52FF.svg?style=flat&logo=kotlin&logoColor=white"/></a>
+  <a href="https://developer.android.com/compose"><img alt="Jetpack Compose" src="https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4.svg?style=flat&logo=jetpackcompose&logoColor=white"/></a>
+</p>
 
-**Delivery de produtos para pets em Boa Vista (RR)**
-
-Uma vitrine com os petshops da cidade: o cliente informa onde está, vê as lojas que entregam ali,
-monta o carrinho e recebe em casa.
-
-[![CI](https://github.com/gabrielevanger/petja-android/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gabrielevanger/petja-android/actions/workflows/ci.yml)
-[![Supabase ativo](https://github.com/gabrielevanger/petja-android/actions/workflows/keep-alive.yml/badge.svg)](https://github.com/gabrielevanger/petja-android/actions/workflows/keep-alive.yml)
-[![Último commit](https://img.shields.io/github/last-commit/gabrielevanger/petja-android?label=%C3%BAltimo%20commit)](https://github.com/gabrielevanger/petja-android/commits/main)
-[![Issues abertas](https://img.shields.io/github/issues/gabrielevanger/petja-android?label=issues)](https://github.com/gabrielevanger/petja-android/issues)
-
-<br>
-
-**Plataforma e linguagem**
-
-[![Android](https://img.shields.io/badge/Android-minSdk%2026%20%7C%20targetSdk%2037-3DDC84?logo=android&logoColor=white)](https://developer.android.com)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
-[![Gradle](https://img.shields.io/badge/Gradle-9.8-02303A?logo=gradle&logoColor=white)](https://gradle.org)
-[![AGP](https://img.shields.io/badge/AGP-9.4.1-3DDC84?logo=android&logoColor=white)](https://developer.android.com/build)
-
-**Interface e arquitetura**
-
-[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202026.09-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
-[![Material 3](https://img.shields.io/badge/Material%203-design%20system-757575?logo=materialdesign&logoColor=white)](https://m3.material.io)
-[![Hilt](https://img.shields.io/badge/Hilt-2.60.1-34A853?logo=android&logoColor=white)](https://dagger.dev/hilt)
-[![Navigation](https://img.shields.io/badge/Navigation-2.10.2-34A853?logo=android&logoColor=white)](https://developer.android.com/guide/navigation)
-[![Coroutines](https://img.shields.io/badge/Coroutines%20e%20Flow-1.11.0-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/docs/coroutines-overview.html)
-[![Serialization](https://img.shields.io/badge/Serialization-1.11.0-7F52FF?logo=kotlin&logoColor=white)](https://github.com/Kotlin/kotlinx.serialization)
-
-**Back-end**
-
-[![Supabase](https://img.shields.io/badge/Supabase-supabase--kt%203.8.0-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-RLS%20e%20PostGIS-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![Ktor](https://img.shields.io/badge/Ktor-3.5.1-087CFA?logo=ktor&logoColor=white)](https://ktor.io)
-[![Realtime](https://img.shields.io/badge/Realtime-pedidos%20ao%20vivo-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/docs/guides/realtime)
-
-**Testes e qualidade**
-
-[![JUnit](https://img.shields.io/badge/JUnit-6.1.3-25A162?logo=junit5&logoColor=white)](https://junit.org)
-[![Robolectric](https://img.shields.io/badge/Robolectric-4.17-3DDC84?logo=android&logoColor=white)](https://robolectric.org)
-[![Turbine](https://img.shields.io/badge/Turbine-1.2.1-7F52FF?logo=kotlin&logoColor=white)](https://github.com/cashapp/turbine)
-[![Roborazzi](https://img.shields.io/badge/Roborazzi-1.76.0-FF6F00?logo=android&logoColor=white)](https://github.com/takahirom/roborazzi)
-[![Konsist](https://img.shields.io/badge/Konsist-0.16.1-7F52FF?logo=kotlin&logoColor=white)](https://docs.konsist.lemonappdev.com)
-[![Kover](https://img.shields.io/badge/Kover-cobertura%20m%C3%ADnima%2080%25-7F52FF?logo=kotlin&logoColor=white)](https://github.com/Kotlin/kotlinx-kover)
-[![ktlint](https://img.shields.io/badge/ktlint-1.8.0-FF4088?logo=kotlin&logoColor=white)](https://pinterest.github.io/ktlint)
-[![Android Lint](https://img.shields.io/badge/Android%20Lint-ativo-3DDC84?logo=android&logoColor=white)](https://developer.android.com/studio/write/lint)
-[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-pt--BR-FE5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org/pt-br)
-
-</div>
-
----
-
-## Telas
+<p align="center">
+Delivery de produtos para pets em Boa Vista (RR): uma vitrine com os petshops da cidade, em que o cliente
+informa onde está, vê as lojas que entregam ali, monta o carrinho e recebe em casa.
+</p>
 
 <p align="center">
   <img src="feature/storefront/src/test/snapshots/storefront_loaded.png" width="260" alt="Vitrine com os petshops que entregam no bairro">
@@ -62,6 +19,27 @@ monta o carrinho e recebe em casa.
 </p>
 
 <p align="center"><sub>Imagens geradas pelos screenshot tests (Roborazzi): se a tela mudar sem querer, o CI falha.</sub></p>
+
+## Stack e bibliotecas
+
+- Android com **minSdk 26** e **targetSdk 37**, 100% [Kotlin](https://kotlinlang.org), com
+  [Coroutines](https://github.com/Kotlin/kotlinx.coroutines) e
+  [Flow](https://kotlinlang.org/docs/flow.html) para tudo que é assíncrono.
+- Jetpack:
+  - [Compose](https://developer.android.com/compose) com [Material 3](https://m3.material.io): toda a interface, sem XML de layout.
+  - [Lifecycle e ViewModel](https://developer.android.com/topic/libraries/architecture/viewmodel): estado da tela que sobrevive à rotação e coleta de Flow ligada ao ciclo de vida.
+  - [Navigation](https://developer.android.com/guide/navigation/design/type-safety) com rotas tipadas.
+  - [DataStore](https://developer.android.com/topic/libraries/architecture/datastore): preferências locais.
+  - [Hilt](https://dagger.dev/hilt): injeção de dependências.
+- Arquitetura:
+  - Fluxo unidirecional de dados (UDF): `Action`, `UiState` imutável e `Event` por tela.
+  - Módulos por camada e por funcionalidade, seguindo o [guia oficial](https://developer.android.com/topic/modularization).
+  - Plugins de convenção do Gradle em `build-logic` e versões no [catálogo](gradle/libs.versions.toml).
+- [Supabase](https://supabase.com) via [supabase-kt](https://github.com/supabase-community/supabase-kt):
+  - Postgrest para os dados, Auth com PKCE para a conta e Realtime para os pedidos ao vivo.
+  - PostgreSQL com RLS em todas as tabelas e PostGIS para a área de entrega.
+- [Ktor](https://ktor.io) (motor OkHttp) e [Kotlin Serialization](https://github.com/Kotlin/kotlinx.serialization) por baixo do supabase-kt.
+- [kotlinx-collections-immutable](https://github.com/Kotlin/kotlinx.collections.immutable): listas imutáveis no estado da tela.
 
 ## Funcionalidades
 
@@ -141,15 +119,15 @@ Tudo abaixo roda no CI em cada pull request, e a `main` só aceita merge com os 
 
 | Verificação | Ferramenta | O que garante |
 |---|---|---|
-| Testes de ViewModel e domínio | JUnit, Turbine, coroutines-test | Cada ação muda o estado do jeito certo |
-| Testes de tela | Robolectric e Compose Test | As telas funcionam na JVM, sem emulador |
-| Screenshot tests | Roborazzi | Nenhuma tela muda de aparência sem querer |
-| Testes de arquitetura | Konsist | Domínio sem Android, ViewModels com Hilt, UiState imutável, Screen sem ViewModel |
-| Cobertura | Kover | Mínimo de 80% por módulo e 90% no projeto |
-| Estilo e análise estática | ktlint e Android Lint | Código padronizado e sem problemas conhecidos do Android |
+| Testes de ViewModel e domínio | [JUnit](https://junit.org), [Turbine](https://github.com/cashapp/turbine) e coroutines-test | Cada ação muda o estado do jeito certo |
+| Testes de tela | [Robolectric](https://robolectric.org) e Compose Test | As telas funcionam na JVM, sem emulador |
+| Screenshot tests | [Roborazzi](https://github.com/takahirom/roborazzi) | Nenhuma tela muda de aparência sem querer |
+| Testes de arquitetura | [Konsist](https://docs.konsist.lemonappdev.com) | Domínio sem Android, ViewModels com Hilt, UiState imutável, Screen sem ViewModel |
+| Cobertura | [Kover](https://github.com/Kotlin/kotlinx-kover) | Mínimo de 80% por módulo e 90% no projeto |
+| Estilo e análise estática | [ktlint](https://pinterest.github.io/ktlint) e [Android Lint](https://developer.android.com/studio/write/lint) | Código padronizado e sem problemas conhecidos do Android |
 | Design tokens | `scripts/check-ui-tokens.sh` | Nenhuma cor, medida ou texto solto fora do tema |
 | Banco | Node (`supabase/tests`) | Migrações, seed e regras de RLS |
-| Commits | hook e CI | Conventional Commits em português |
+| Commits | hook e CI ([Conventional Commits](https://www.conventionalcommits.org/pt-br)) | Conventional Commits em português |
 
 Para rodar localmente:
 
