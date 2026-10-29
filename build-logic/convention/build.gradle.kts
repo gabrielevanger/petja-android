@@ -23,6 +23,8 @@ dependencies {
     compileOnly(libs.ktlint.gradlePlugin)
     // implementation, e não compileOnly: nenhum outro build traz o Kover para o classpath dos projetos.
     implementation(libs.kover.gradlePlugin)
+    // Roborazzi: o build-logic precisa do plugin no classpath para aplicá-lo nos módulos de feature e compose.
+    implementation(libs.roborazzi.gradlePlugin)
 }
 
 gradlePlugin {
