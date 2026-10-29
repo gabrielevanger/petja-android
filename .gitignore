@@ -29,8 +29,11 @@ Thumbs.db
 # Node (testes do banco em supabase/tests)
 node_modules/
 
-# Contexto local do assistente de IA
+# Contexto e agentes locais do assistente de IA (não vão para o GitHub)
 CLAUDE.local.md
+AGENTS.md
+.agents/
+.claude/skills/
 
 # Supabase CLI
 supabase/.branches/
