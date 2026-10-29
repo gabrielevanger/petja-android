@@ -15,8 +15,47 @@ permissions:
   contents: read
 
 jobs:
+  # PR que só mexe em texto (Markdown e templates do GitHub) não precisa de build nem de testes.
+  # A lista é do que com certeza é texto: qualquer outro arquivo, mesmo um esquecido aqui, roda tudo.
+  # Push na main e execução manual rodam sempre.
+  changes:
+    name: Arquivos alterados
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      somente-texto: ${{ steps.verificar.outputs.somente-texto }}
+    steps:
+      - uses: actions/checkout@v7
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+
+      - name: Verificar se o PR só muda texto
+        id: verificar
+        env:
+          EVENTO: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENTO" != "pull_request" ]; then
+            echo "somente-texto=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/alterados"
+          cat "$RUNNER_TEMP/alterados"
+          if [ ! -s "$RUNNER_TEMP/alterados" ] || grep -qvE '\.md$|^\.github/ISSUE_TEMPLATE/' "$RUNNER_TEMP/alterados"; then
+            echo "somente-texto=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "somente-texto=true" >> "$GITHUB_OUTPUT"
+            echo "Só texto mudou: build e testes ficam de fora." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   android:
     name: "App: análise estática, testes e APK"
+    # Job pulado conta como aprovado no ruleset. O !cancelled() faz rodar se o job acima falhar,
+    # para uma falha na detecção nunca liberar o merge sem testes.
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.somente-texto != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -127,6 +166,8 @@ jobs:
 
   database:
     name: "Banco: migrações, seed e RLS"
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.somente-texto != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
