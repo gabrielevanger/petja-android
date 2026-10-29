@@ -46,8 +46,16 @@ jobs:
       - name: Análise estática (ktlint e Android Lint)
         run: ./gradlew ktlintCheck :build-logic:convention:ktlintCheck :app:lintDebug
 
-      - name: Testes unitários
+      - name: Testes unitários e visuais (Roborazzi)
         run: ./gradlew test
+
+      - name: Publicar diffs de screenshot (em caso de falha)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshot-diffs-${{ github.sha }}
+          path: '**/build/outputs/roborazzi/'
+          retention-days: 7
 
       # Usa os resultados dos testes acima; falha se algum módulo ficar abaixo do piso (ver CONTRIBUTING).
       - name: Cobertura de testes (Kover)
