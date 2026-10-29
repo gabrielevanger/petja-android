@@ -1,9 +1,10 @@
 [versions]
-# Versões validadas em 28/09/2026, mais supabase-kt e Ktor.
+# Versões validadas em 28/10/2026.
 # AGP 9 traz o Kotlin embutido: o KGP é fixado pela versão dos plugins
 # kotlin-compose e kotlin-serialization abaixo.
+# O AGP 9.5.0 saiu em 28/10/2026: esperar umas semanas antes de subir.
 agp = "9.4.1"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 ksp = "2.3.12"
 hilt = "2.60.1"
 androidxHilt = "1.4.0"
@@ -13,9 +14,9 @@ coreKtx = "1.19.1"
 lifecycle = "2.11.0"
 activityCompose = "1.13.0"
 navigationCompose = "2.10.2"
-datastore = "1.2.1"
+datastore = "1.3.0"
 kotlinxCoroutines = "1.11.0"
-kotlinxSerialization = "1.11.0"
+kotlinxSerialization = "1.12.0"
 kotlinxCollectionsImmutable = "0.5.2"
 # supabase-kt 3.8.0 foi compilado com Ktor 3.5.1: manter o motor na mesma versão.
 supabase = "3.8.0"
@@ -32,7 +33,7 @@ ktlintGradle = "14.2.0"
 kover = "0.9.11"
 # Versão do motor do ktlint, fixada para o resultado não mudar com o plugin.
 ktlint = "1.8.0"
-konsist = "0.16.1"
+konsist = "0.18.1"
 roborazzi = "1.76.0"
 
 # Plataforma Android
